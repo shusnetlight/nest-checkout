@@ -1,0 +1,27 @@
+# Nest Checkout — Cursor Rules
+
+## Project
+A mini desktop web app for Netlight's weekly "Nest Checkout" ritual.
+Stack: React + TypeScript + Tailwind v4 (Vite). No backend, no router.
+All state lives in App.tsx as a wizard flow.
+
+## Features
+Wizard with steps: Start → Name/Alias → Mood Meter → Achievements & Learnings
+→ Fun Question → Weekend Highlight → Overview Board.
+Each participant gets a unique animal emoji and sticky note color, consistent throughout.
+
+## Netlight Branding
+See full reference: @docs/brand.md
+
+Key tokens: bg-nl-purple (#A29AFF), bg-nl-yellow (#FFF400), bg-nl-black, bg-nl-white, bg-nl-beige
+Font: Proxima Nova (all weights loaded in src/index.css via @font-face)
+Always use nl-* Tailwind tokens — never hardcode hex values in components.
+
+## Code Style
+- Functional components only, no class components
+- Keep each component small and focused (< 100 lines)
+- Tailwind classes only for styling — no inline styles, no CSS modules
+- Use nl-* color tokens (e.g. bg-nl-purple, text-nl-yellow)
+- No external state management (useState/useReducer in App.tsx is enough)
+- No backend, no API calls, no persistence
+- Desktop-first layout (min-width: 1024px assumed)

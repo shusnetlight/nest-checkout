@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-thin.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-thinit.otf') format('opentype');
+  font-weight: 100;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-lightit.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-regularit.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-mediumit.otf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-semiboldit.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-boldit.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-extrabold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-extraboldit.otf') format('opentype');
+  font-weight: 800;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/proximanova-blackit.otf') format('opentype');
+  font-weight: 900;
+  font-style: italic;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@theme {
+  /* Netlight Purple (primary) */
+  --color-nl-purple: #A29AFF;
+  --color-nl-purple-light: #C6C6FF;
+  --color-nl-purple-dark: #6664F1;
+
+  /* Netlight Yellow (secondary) */
+  --color-nl-yellow: #FFF400;
+  --color-nl-yellow-light: #FFF4A4;
+  --color-nl-yellow-dark: #EFD500;
+
+  /* Neutrals */
+  --color-nl-black: #000000;
+  --color-nl-white: #FFFFFF;
+  --color-nl-beige: #FFF0E6;
+
+  /* Complementary */
+  --color-nl-orange: #FFDA70;
+  --color-nl-pink: #FF99FF;
+  --color-nl-blue: #6CDBFF;
+  --color-nl-green: #77FFF8;
+
+  /* Animations */
+  --animate-fade-up: fade-up 0.3s ease both;
+
+  /* Typography */
+  --font-sans: 'Proxima Nova', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+}

@@ -202,7 +202,7 @@ interface Props {
   onReset: () => void
 }
 
-export default function OverviewBoard({ submissions, sessionId, onAddPerson, onReset }: Props) {
+export default function OverviewBoard({ submissions, sessionId, onAddPerson: _onAddPerson, onReset }: Props) {
   const shareUrl = `${window.location.origin}?session=${sessionId}`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)

@@ -1,0 +1,15 @@
+export const QUESTIONS: { a: string; b: string }[] = [
+  { a: '🛋️ Home Office: Pajamas all day',     b: '👖 Home Office: Normal trousers' },
+  { a: '💻 Laptop stickers everywhere',       b: '✨ Spotless laptop, always' },
+  { a: '🏃🏼 Deadline: Last-minute sprint',    b: '😌 Deadline: Done two days early' },
+  { a: '🎤 Presentation: Full freestyle',    b: '📋 Presentation: Stick to the script' },
+  { a: '🔕 Slack: Batched reply windows',    b: '💬 Slack: Reply within minutes' },
+  { a: '🌲 Holiday activity: Hiking',        b: '🏖️ Holiday activity: Beach bar' },
+  { a: '☕ Coffee: Black, no nonsense',       b: '🧋 Coffee: Oat latte with a syrup' },
+  { a: '🎯 Feedback: Blunt and direct',      b: '🕊️ Feedback: Wrapped and diplomatic' },
+  { a: '🏃 After work: Straight to the gym', b: '🛁 After work: Couch' },
+  { a: '📅 Weekend: Fully planned',          b: '🎲 Weekend: Completely spontaneous' },
+  { a: '🔊 Music while working: Always',     b: '🔇 Music while working: Never' },
+  { a: '🌙 Peak productivity: Night owl',    b: '🌅 Peak productivity: Early bird' },
+  { a: '🍕 Pizza',                           b: '🍝 Pasta' },
+]

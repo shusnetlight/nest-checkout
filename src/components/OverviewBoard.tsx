@@ -203,7 +203,7 @@ interface Props {
 }
 
 export default function OverviewBoard({ submissions, sessionId, onAddPerson: _onAddPerson, onReset }: Props) {
-  const shareUrl = `${window.location.origin}?session=${sessionId}`
+  const shareUrl = `${window.location.origin}?session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
   const boardRef = useRef<HTMLDivElement>(null)

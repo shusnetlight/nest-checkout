@@ -61,13 +61,15 @@ function App() {
       .subscribe()
   }, [])
 
-  // On mount: check URL for session
+  // On mount: check URL for session and view
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const sid = params.get('session')
+    const view = params.get('view')
     if (sid) {
       setSessionId(sid)
       loadAndSubscribe(sid)
+      if (view === 'overview') setPage('overview')
     }
   }, [loadAndSubscribe])
 
@@ -102,6 +104,7 @@ function App() {
       await supabase.from('submissions').insert({ session_id: sessionId, data: draft })
       setShowWizard(false)
       setDraft(EMPTY_DRAFT)
+      window.history.pushState({}, '', `?session=${sessionId}&view=overview`)
       setPage('overview')
     }
   }

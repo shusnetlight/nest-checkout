@@ -12,4 +12,6 @@ export const QUESTIONS: { a: string; b: string }[] = [
   { a: '🔊 Music while working: Always',     b: '🔇 Music while working: Never' },
   { a: '🌙 Peak productivity: Night owl',    b: '🌅 Peak productivity: Early bird' },
   { a: '🍕 Pizza',                           b: '🍝 Pasta' },
+  { a: '🚀 Morning boost: Ice-cold shower',          b: '🌸 Morning boost: Meditation with scented candles' },
+
 ]

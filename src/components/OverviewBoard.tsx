@@ -198,12 +198,13 @@ function PersonTag({ s }: { s: Submission }) {
 interface Props {
   submissions: Submission[]
   sessionId: string
+  nestName: string
   onAddPerson: () => void
   onReset: () => void
 }
 
-export default function OverviewBoard({ submissions, sessionId, onAddPerson: _onAddPerson, onReset }: Props) {
-  const shareUrl = `${window.location.origin}?session=${sessionId}&view=overview`
+export default function OverviewBoard({ submissions, sessionId, nestName, onAddPerson: _onAddPerson, onReset }: Props) {
+  const shareUrl = `${window.location.origin}?session=${sessionId}&nest=${encodeURIComponent(nestName)}&view=overview`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
   const boardRef = useRef<HTMLDivElement>(null)
@@ -236,7 +237,7 @@ export default function OverviewBoard({ submissions, sessionId, onAddPerson: _on
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-normal uppercase text-sm text-nl-purple-dark tracking-widest">Pretzel Gaudi 🥨</p>
+          <p className="font-normal uppercase text-sm text-nl-purple-dark tracking-widest">{nestName}</p>
           <h1 className="font-black text-3xl text-nl-black mt-0.5">Nest Checkout — Overview</h1>
         </div>
         <div className="flex gap-3 items-center">

@@ -6,9 +6,10 @@ import Achievements from './Achievements'
 import FunQuestion, { type FunAnswer } from './FunQuestion'
 import Weekend from './Weekend'
 import WeekRecap from './WeekRecap'
+import Drawing, { type DrawingStroke } from './Drawing'
 
-const STEPS_BASE    = ['Your Identity', 'Mood Check', 'Achievements', 'Fun Question', 'Weekend Plans']
-const STEPS_PHOTO   = ['Your Identity', 'Mood Check', 'Week Recap', 'Achievements', 'Fun Question', 'Weekend Plans']
+const STEPS_BASE    = ['Your Identity', 'Mood Check', 'Achievements', 'Fun Question', 'Weekend Plans', "Let's Co-Create"]
+const STEPS_PHOTO   = ['Your Identity', 'Mood Check', 'Week Recap', 'Achievements', 'Fun Question', 'Weekend Plans', "Let's Co-Create"]
 
 interface Draft {
   name: string
@@ -18,6 +19,7 @@ interface Draft {
   learnings: string[]
   funAnswer: FunAnswer | null
   weekend: string
+  drawing: DrawingStroke[]
 }
 
 interface Props {
@@ -30,12 +32,13 @@ interface Props {
   onAchievementsChange: (field: 'wins' | 'learnings', items: string[]) => void
   onFunAnswerChange: (a: FunAnswer) => void
   onWeekendChange: (v: string) => void
+  onDrawingChange: (strokes: DrawingStroke[]) => void
   onNext: () => void
   onBack: () => void
   onClose: () => void
 }
 
-export default function WizardModal({ step, draft, questionIndex, photoUrl, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onNext, onBack, onClose }: Props) {
+export default function WizardModal({ step, draft, questionIndex, photoUrl, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onDrawingChange, onNext, onBack, onClose }: Props) {
   const STEPS = photoUrl ? STEPS_PHOTO : STEPS_BASE
   const submitRef = useRef<HTMLButtonElement>(null)
 
@@ -122,6 +125,9 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, onDr
           )}
           {step === 5 + p && (
             <Weekend value={draft.weekend} onChange={onWeekendChange} />
+          )}
+          {step === 6 + p && (
+            <Drawing strokes={draft.drawing} onChange={onDrawingChange} />
           )}
         </div>
 

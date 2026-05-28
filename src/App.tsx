@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import WizardModal from './components/checkout/WizardModal'
 import NestBackground from './components/NestBackground'
 import OverviewBoard, { type Submission } from './components/OverviewBoard'
@@ -8,6 +9,7 @@ import ReadyPage from './components/coach/ReadyPage'
 import { supabase } from './lib/supabase'
 import type { MoodSelection } from './components/checkout/MoodMeter'
 import type { FunAnswer } from './components/checkout/FunQuestion'
+import type { DrawingStroke } from './components/checkout/Drawing'
 
 export interface Draft {
   name: string
@@ -17,10 +19,11 @@ export interface Draft {
   learnings: string[]
   funAnswer: FunAnswer | null
   weekend: string
+  drawing: DrawingStroke[]
 }
 
 const EMPTY_DRAFT: Draft = {
-  name: '', emoji: '', mood: null, wins: [], learnings: [], funAnswer: null, weekend: '',
+  name: '', emoji: '', mood: null, wins: [], learnings: [], funAnswer: null, weekend: '', drawing: [],
 }
 
 function generateSessionId() {
@@ -51,8 +54,34 @@ function App() {
   const [showWizard, setShowWizard] = useState(false)
   const [wizardStep, setWizardStep] = useState(1)
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
+  const letsStartRef = useRef<HTMLButtonElement>(null)
+  const rocketEmojiRef = useRef<HTMLSpanElement>(null)
+  const [launchRockets, setLaunchRockets] = useState<{ id: number; x: number; y: number; dx: number; dy: number; duration: number; delay: number }[]>([])
 
   const questionIndex = useMemo(() => Math.floor(Math.random() * 15), [showWizard]) // eslint-disable-line
+
+  function handleLetsStart() {
+    const origin = rocketEmojiRef.current ?? letsStartRef.current
+    if (origin) {
+      const rect = origin.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+      const spread = [
+        { dx: 160, dy: -420, duration: 0.8, delay: 0.00 },
+        { dx: 220, dy: -380, duration: 0.9, delay: 0.07 },
+        { dx: 130, dy: -460, duration: 0.75, delay: 0.12 },
+        { dx: 280, dy: -340, duration: 1.0, delay: 0.04 },
+        { dx: 190, dy: -490, duration: 0.85, delay: 0.16 },
+        { dx: 100, dy: -400, duration: 0.7, delay: 0.09 },
+        { dx: 250, dy: -440, duration: 0.95, delay: 0.02 },
+      ]
+      setLaunchRockets(
+        spread.map((s, i) => ({ id: Date.now() + i, x: cx, y: cy, ...s }))
+      )
+      setTimeout(() => setLaunchRockets([]), 1200)
+    }
+    setTimeout(startWizard, 500)
+  }
 
   const loadAndSubscribe = useCallback(async (sid: string) => {
     const { data } = await supabase
@@ -123,9 +152,12 @@ function App() {
   function handleWeekendChange(weekend: string) {
     setDraft(prev => ({ ...prev, weekend }))
   }
+  function handleDrawingChange(drawing: DrawingStroke[]) {
+    setDraft(prev => ({ ...prev, drawing }))
+  }
 
   async function handleNext() {
-    const totalSteps = sessionPhotoUrl ? 6 : 5
+    const totalSteps = sessionPhotoUrl ? 7 : 6
     if (wizardStep < totalSteps) {
       setWizardStep(s => s + 1)
     } else {
@@ -168,6 +200,7 @@ function App() {
       onAchievementsChange={handleAchievementsChange}
       onFunAnswerChange={handleFunAnswerChange}
       onWeekendChange={handleWeekendChange}
+      onDrawingChange={handleDrawingChange}
       onNext={handleNext}
       onBack={handleBack}
       onClose={() => setShowWizard(false)}
@@ -248,12 +281,46 @@ function App() {
           A weekly space to reflect, celebrate wins, and connect.<br />Ready to check in?
         </p>
         <button
-          onClick={startWizard}
+          ref={letsStartRef}
+          onClick={handleLetsStart}
           className="relative z-10 bg-nl-purple-dark text-nl-white font-bold text-base px-10 py-4 rounded-xl hover:bg-nl-purple hover:text-nl-black transition-colors cursor-pointer"
         >
-          Let's Start 🚀
+          Let's Start <span ref={rocketEmojiRef}>🚀</span>
         </button>
+
+        <div className="flex gap-3 mt-25">
+          <button
+            onClick={() => { navigator.clipboard.writeText(window.location.href); }}
+            className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+          >
+            🔗 Share link
+          </button>
+          <button
+            onClick={() => { window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}&view=overview`); setPage('overview') }}
+            className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+          >
+            Overview →
+          </button>
+        </div>
+
         {wizardModal}
+        {createPortal(
+          <AnimatePresence>
+            {launchRockets.map(r => (
+              <motion.div
+                key={r.id}
+                className="fixed pointer-events-none text-2xl z-[999] -translate-x-1/2 -translate-y-1/2"
+                style={{ left: r.x, top: r.y }}
+                initial={{ y: 0, x: 0, opacity: 1, rotate: 0 }}
+                animate={{ y: r.dy, x: r.dx, opacity: 0, rotate: 0 }}
+                transition={{ duration: r.duration, ease: [0.2, 0, 0.3, 1], delay: r.delay }}
+              >
+                🚀
+              </motion.div>
+            ))}
+          </AnimatePresence>,
+          document.body
+        )}
       </div>
     )
   }

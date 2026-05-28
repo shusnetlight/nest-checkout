@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { toPng } from 'html-to-image'
 import type { Draft } from '../App'
+import { renderStrokes } from './checkout/Drawing'
 
 export interface Submission extends Draft {
   colorIdx: number
@@ -66,9 +67,9 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
                 <div
                   key={`${rIdx}-${cIdx}`}
                   style={{ backgroundColor: cellColor(rIdx, cIdx) }}
-                  className="flex items-center justify-center"
+                  className="relative flex items-center justify-center group"
                 >
-                  <span className="text-[9px] font-bold text-nl-black/70 text-center leading-tight px-0.5 select-none">
+                  <span className="relative text-[9px] font-bold text-center leading-tight px-0.5 select-none text-nl-black/70 group-hover:text-nl-black group-hover:bg-white group-hover:rounded-sm group-hover:px-1 group-hover:z-[100] transition-colors">
                     {label}
                   </span>
                 </div>
@@ -84,7 +85,6 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-base shadow-md border-2"
                 style={{ backgroundColor: colorOf(s.colorIdx).bg, borderColor: colorOf(s.colorIdx).border }}
-                title={`${s.emoji} ${s.name}`}
               >
                 {s.emoji}
               </div>
@@ -160,6 +160,39 @@ function StickyNote({ text, s }: { text: string; s: Submission }) {
       </span>
       <span className="text-sm font-semibold text-nl-black leading-snug">{text}</span>
     </div>
+  )
+}
+
+// ── Team Canvas ───────────────────────────────────────────────────────────────
+
+const CANVAS_W = 360
+const CANVAS_H = 240
+
+function TeamCanvas({ submissions }: { submissions: Submission[] }) {
+  const [dataUrl, setDataUrl] = useState<string>('')
+
+  useEffect(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = CANVAS_W
+    canvas.height = CANVAS_H
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
+    for (const s of submissions) {
+      if (!s.drawing?.length) continue
+      renderStrokes(ctx, s.drawing, CANVAS_W, CANVAS_H)
+    }
+    setDataUrl(canvas.toDataURL())
+  }, [submissions])
+
+  return (
+    <img
+      src={dataUrl}
+      width={CANVAS_W}
+      height={CANVAS_H}
+      className="rounded-xl border border-nl-black/10"
+      style={{ width: CANVAS_W, height: CANVAS_H }}
+    />
   )
 }
 
@@ -272,12 +305,20 @@ export default function OverviewBoard({ submissions, sessionId, nestName, onAddP
       {/* Main content */}
       <div className="flex gap-10 items-start">
 
-        {/* Mood Board */}
-        <div className="shrink-0">
-          <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">
-            Mood Check
-          </h2>
-          <MoodBoard submissions={submissions} />
+        {/* Mood Board + Team Canvas */}
+        <div className="shrink-0 flex flex-col gap-12">
+          <div>
+            <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">
+              Mood Check
+            </h2>
+            <MoodBoard submissions={submissions} />
+          </div>
+          <div>
+            <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">
+              Let's Co-Create
+            </h2>
+            <TeamCanvas submissions={submissions} />
+          </div>
         </div>
 
         {/* Cards */}

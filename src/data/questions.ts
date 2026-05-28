@@ -18,6 +18,20 @@ export const QUESTIONS: { a: string; b: string }[] = [
   { a: '🚲 Commute: Bike',                   b: '🛴 Commute: E-scooter' },
   { a: '🍔 Lunch: Adventurous street food',  b: '🥗 Lunch: Classic homecooked meal' },
   { a: '🍰 Dessert: Cheesecake',             b: '🍪 Dessert: Chocolate chip cookies' },
+  { a: '🎲 Decisions: Coin flip',            b: '🔍 Decisions: Pro-con list' },
+  { a: '🍳 Breakfast: Savory',               b: '🥐 Breakfast: Sweet' },
+  { a: '🧑‍🚀 Work from a spaceship for a week', b: '🎪 Work from a circus tent for a week' },
+  { a: '📢 Speak only in rhymes during presentations', b: '🎤 Present every topic as a rap' },
+  { a: '🏄‍♀️ Lunch break: Surfing waves',         b: '🎨 Lunch break: Painting portraits' },
+  { a: '👾 Office decor: Retro arcade machines', b: '🌱 Office decor: Indoor jungle' },
+  { a: '🐦 Morning stretch with group bird dances', b: '🦁 Morning motivation by roaring together' },
+  { a: '🌓 Afternoon nap on a hammock',          b: '🎢 Afternoon break on a roller coaster' }, 
+  { a: '🍕 Pizza party every Friday',            b: '🍣 Sushi party every Friday' },
+  { a: '💬 Only communicate with GIFs for a day',             b: '🎙️ Only voice notes for a day' },
+  { a: '🧊 Icebreaker: Two truths and a lie',                 b: '🤔 Icebreaker: Would You Rather?' },
+  { a: '⏳ Time stops for 10 minutes every hour',             b: '🌪️ You can fast-forward through boring meetings' },
+  { a: '🍿 Project kickoff with popcorn',                      b: '🍩 Project kickoff with donuts' },
+
 
 
 ]

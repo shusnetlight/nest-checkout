@@ -1,12 +1,27 @@
 import { useState, useRef, useEffect } from 'react'
 import type { Song } from '../lib/songs'
 
-export default function NowPlaying({ song }: { song: Song }) {
+interface Props {
+  song: Song
+  startedAt: number | null
+}
+
+export default function NowPlaying({ song, startedAt }: Props) {
   const [muted, setMuted] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  // Reset mute state when song changes
+  // Reset mute when song changes
   useEffect(() => { setMuted(false) }, [song.id])
+
+  // Compute playback offset once per song at mount time
+  const startSecondsRef = useRef(0)
+  const mountedSongRef = useRef('')
+  if (mountedSongRef.current !== song.id) {
+    mountedSongRef.current = song.id
+    startSecondsRef.current = startedAt
+      ? Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+      : 0
+  }
 
   function toggleMute() {
     const cmd = muted ? 'unMute' : 'mute'
@@ -22,7 +37,7 @@ export default function NowPlaying({ song }: { song: Song }) {
       <iframe
         key={song.id}
         ref={iframeRef}
-        src={`https://www.youtube.com/embed/${song.ytId}?autoplay=1&enablejsapi=1`}
+        src={`https://www.youtube.com/embed/${song.ytId}?autoplay=1&enablejsapi=1&start=${startSecondsRef.current}`}
         width="1"
         height="1"
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}

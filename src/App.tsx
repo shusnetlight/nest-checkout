@@ -66,6 +66,8 @@ function App() {
   const questionIndex = useMemo(() => Math.floor(Math.random() * QUESTIONS.length), [showWizard]) // eslint-disable-line
 
   const [songVoteCounts, setSongVoteCounts] = useState<Record<string, number>>({})
+  const [songStartedAt, setSongStartedAt] = useState<number | null>(null)
+  const prevWinningSongIdRef = useRef<string | null>(null)
 
   const sessionSongs = useMemo(() => sessionId ? getSessionSongs(sessionId) : ALL_SONGS.slice(0, 3), [sessionId])
 
@@ -74,6 +76,20 @@ function App() {
     if (!entries.length) return null
     return sessionSongs.find(s => s.id === entries[0][0]) ?? null
   }, [songVoteCounts, sessionSongs])
+
+  // Broadcast song start time whenever the winning song changes
+  useEffect(() => {
+    if (winningSong?.id === prevWinningSongIdRef.current) return
+    prevWinningSongIdRef.current = winningSong?.id ?? null
+    if (!winningSong) { setSongStartedAt(null); return }
+    const now = Date.now()
+    setSongStartedAt(now)
+    channelRef.current?.send({
+      type: 'broadcast',
+      event: 'song_start',
+      payload: { songId: winningSong.id, startedAt: now },
+    })
+  }, [winningSong])
 
   function handleLetsStart() {
     const origin = rocketEmojiRef.current ?? letsStartRef.current
@@ -133,6 +149,13 @@ function App() {
       .on('broadcast', { event: 'song_vote' }, (payload) => {
         const songId = payload.payload?.songId
         if (songId) setSongVoteCounts(prev => ({ ...prev, [songId]: (prev[songId] ?? 0) + 1 }))
+      })
+      .on('broadcast', { event: 'song_start' }, (payload) => {
+        const { startedAt } = payload.payload ?? {}
+        if (typeof startedAt === 'number') {
+          // Take the earliest timestamp — first broadcast is authoritative
+          setSongStartedAt(prev => (prev === null || startedAt < prev) ? startedAt : prev)
+        }
       })
       .subscribe()
     channelRef.current = channel
@@ -391,7 +414,7 @@ function App() {
         </div>
       )}
 
-      {winningSong && <NowPlaying song={winningSong} />}
+      {winningSong && <NowPlaying song={winningSong} startedAt={songStartedAt} />}
     </>
   )
 }

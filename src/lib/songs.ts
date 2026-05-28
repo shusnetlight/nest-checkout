@@ -7,15 +7,14 @@ export interface Song {
 }
 
 export const ALL_SONGS: Song[] = [
-  { id: 'happy',          title: 'Happy',               artist: 'Pharrell Williams',  emoji: '☀️', ytId: 'ZbZSe6N_BXs' },
-  { id: 'dont-stop',      title: "Don't Stop Me Now",   artist: 'Queen',              emoji: '🎸', ytId: 'HgzGwKwLmgM' },
-  { id: 'uptown-funk',    title: 'Uptown Funk',          artist: 'Bruno Mars',         emoji: '🕺', ytId: 'OPf0YbXqDm0' },
-  { id: 'shape-of-you',   title: 'Shape of You',         artist: 'Ed Sheeran',         emoji: '🎶', ytId: 'JGwWNGJdvx8' },
-  { id: 'shake-it-off',   title: 'Shake It Off',         artist: 'Taylor Swift',       emoji: '✨', ytId: 'nfWlot6h_JM' },
-  { id: 'dancing-queen',  title: 'Dancing Queen',        artist: 'ABBA',               emoji: '👑', ytId: 'xFrGuyw1V8s' },
-  { id: 'bohemian',       title: 'Bohemian Rhapsody',    artist: 'Queen',              emoji: '🎭', ytId: 'fJ9rUzIMcZQ' },
-  { id: 'good-as-hell',   title: 'Good as Hell',         artist: 'Lizzo',              emoji: '💪', ytId: 'SmbmeOgWsqE' },
-  { id: 'cant-stop',      title: "Can't Stop the Feeling", artist: 'Justin Timberlake', emoji: '🌟', ytId: 'ru0K8uYEZWw' },
+  { id: 'que-pasa',       title: 'Que pasa',                    artist: 'Aymo',          emoji: '🎵', ytId: 'iTD4lWuEKrE' },
+  { id: 'midnight-city',  title: 'Midnight City',               artist: 'M83',            emoji: '🌃', ytId: 'dX3k_QDnzHE' },
+  { id: 'less-i-know',    title: 'The Less I Know The Better',  artist: 'Tame Impala',    emoji: '🌀', ytId: '2SUwOgmvzK4' },
+  { id: 'electric-feel',  title: 'Electric Feel',               artist: 'MGMT',           emoji: '⚡', ytId: 'MmZexg8sxyk' },
+  { id: 'day-n-nite',     title: "Day 'N' Nite",                artist: 'Kid Cudi',       emoji: '🌙', ytId: 'VrDfSZ_6f4U' },
+  { id: 'feel-good-inc',  title: 'Feel Good Inc.',              artist: 'Gorillaz',       emoji: '🎮', ytId: 'HyHNuVaZJ-k' },
+  { id: 'heat-waves',     title: 'Heat Waves',                  artist: 'Glass Animals',  emoji: '🌊', ytId: 'mRD0-GxqHVo' },
+  { id: 'nightcall',      title: 'Nightcall',                   artist: 'Kavinsky',       emoji: '🚗', ytId: 'MV_3Dpw-BRY' },
 ]
 
 // Deterministic seeded shuffle — same sessionId always returns same 3 songs

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Song } from '../lib/songs'
 
 export default function NowPlaying({ song }: { song: Song }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
 
   return (
     <div className="fixed bottom-4 right-4 z-[100] rounded-2xl overflow-hidden shadow-xl border border-nl-black/10 bg-nl-white">

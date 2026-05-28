@@ -71,15 +71,15 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
 
           <div className="flex items-center justify-between px-8 pt-6 pb-2">
             <div>
-              <h2 className="font-black text-2xl text-nl-black">Vote for this week's vibe 🎵</h2>
-              <p className="font-semibold text-xs uppercase tracking-widest text-nl-black/40 mt-2">
-                The song with the most votes will play in the background
+              <h2 className="font-black text-2xl text-nl-black">Vote for this week's vibe</h2>
+              <p className="font-semibold text-sm uppercase tracking-widest text-nl-black/50 mt-4">
+                The song with the most votes will play in the background 🎶
               </p>
             </div>
             <button onClick={onClose} className="text-nl-black/30 hover:text-nl-black text-2xl leading-none transition-colors">×</button>
           </div>
 
-          <div className="px-8 py-6">
+          <div className="px-8 py-4 pb-8">
             <SongPicker
               songs={songs}
               selected={draft.song_choice ?? null}

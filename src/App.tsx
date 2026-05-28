@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import WizardModal from './components/WizardModal'
-import PretzelBackground from './components/PretzelBackground'
+import { motion } from 'framer-motion'
+import WizardModal from './components/checkout/WizardModal'
+import NestBackground from './components/NestBackground'
 import OverviewBoard, { type Submission } from './components/OverviewBoard'
+import UploadPhotoPage from './components/coach/UploadPhotoPage'
+import ReadyPage from './components/coach/ReadyPage'
 import { supabase } from './lib/supabase'
-import type { MoodSelection } from './components/steps/StepMoodMeter'
-import type { FunAnswer } from './components/steps/StepFunQuestion'
+import type { MoodSelection } from './components/checkout/MoodMeter'
+import type { FunAnswer } from './components/checkout/FunQuestion'
 
 export interface Draft {
   name: string
@@ -24,17 +27,27 @@ function generateSessionId() {
   return Math.random().toString(36).slice(2, 10)
 }
 
+function toSlug(name: string) {
+  return name.toLowerCase().replace(/\s+/g, '-')
+}
+
 const NESTS = [
-  { name: 'Pretzel Gaudi',       emoji: '🥨' },
-  { name: 'Travelling Racoons',  emoji: '🦝' },
-  { name: 'Diamond Ducks',       emoji: '🦆' },
+  { name: 'Pretzel Gaudi',      emoji: '🥨', tagline: 'Crispy, twisted & always there' },
+  { name: 'Travelling Racoons', emoji: '/racoon.png', tagline: 'Curious minds, always exploring' },
+  { name: 'Diamond Ducks',      emoji: '/diamond-duck.png', tagline: 'Waddling strong, shining bright' },
 ]
+
+function fromSlug(slug: string) {
+  return NESTS.find(n => toSlug(n.name) === slug)?.name ?? slug
+}
 
 function App() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [nestName, setNestName] = useState<string | null>(null)
+  const [hoveredNest, setHoveredNest] = useState<string | null>(null)
+  const [sessionPhotoUrl, setSessionPhotoUrl] = useState<string | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
-  const [page, setPage] = useState<'welcome' | 'overview'>('welcome')
+  const [page, setPage] = useState<'welcome' | 'upload-photo' | 'ready' | 'overview'>('welcome')
   const [showWizard, setShowWizard] = useState(false)
   const [wizardStep, setWizardStep] = useState(1)
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
@@ -76,19 +89,23 @@ function App() {
     const nest = params.get('nest')
     if (sid) {
       setSessionId(sid)
-      if (nest) setNestName(nest)
+      if (nest) setNestName(fromSlug(nest))
       loadAndSubscribe(sid)
       if (view === 'overview') setPage('overview')
+      supabase.from('sessions').select('photo_url').eq('id', sid).single().then(({ data }) => {
+        if (data?.photo_url) setSessionPhotoUrl(data.photo_url)
+      })
     }
   }, [loadAndSubscribe])
 
-  async function createSession(nest: string) {
+  function createSession(nest: string) {
     const sid = generateSessionId()
-    await supabase.from('sessions').insert({ id: sid })
-    window.history.pushState({}, '', `?session=${sid}&nest=${encodeURIComponent(nest)}`)
+    supabase.from('sessions').insert({ id: sid })
+    window.history.pushState({}, '', `?nest=${toSlug(nest)}&session=${sid}`)
     setSessionId(sid)
     setNestName(nest)
     loadAndSubscribe(sid)
+    setPage('upload-photo')
   }
 
   function handleDraftChange(field: 'name' | 'emoji', value: string) {
@@ -108,13 +125,14 @@ function App() {
   }
 
   async function handleNext() {
-    if (wizardStep < 5) {
+    const totalSteps = sessionPhotoUrl ? 6 : 5
+    if (wizardStep < totalSteps) {
       setWizardStep(s => s + 1)
     } else {
       await supabase.from('submissions').insert({ session_id: sessionId, data: draft })
       setShowWizard(false)
       setDraft(EMPTY_DRAFT)
-      window.history.pushState({}, '', `?session=${sessionId}&nest=${encodeURIComponent(nestName ?? '')}&view=overview`)
+      window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}&view=overview`)
       setPage('overview')
     }
   }
@@ -141,6 +159,7 @@ function App() {
       step={wizardStep}
       draft={draft}
       questionIndex={questionIndex}
+      photoUrl={sessionPhotoUrl}
       onDraftChange={handleDraftChange}
       onMoodChange={handleMoodChange}
       onAchievementsChange={handleAchievementsChange}
@@ -151,6 +170,42 @@ function App() {
       onClose={() => setShowWizard(false)}
     />
   )
+
+  const nestEmoji = NESTS.find(n => n.name === nestName)?.emoji ?? '🥨'
+
+  // Upload photo page (coach only)
+  if (page === 'upload-photo') {
+    return (
+      <UploadPhotoPage
+        sessionId={sessionId!}
+        nestName={nestName ?? ''}
+        nestEmoji={nestEmoji}
+        onDone={(url) => {
+          if (url) setSessionPhotoUrl(url)
+          setPage('ready')
+        }}
+        onNavigate={(step) => {
+          if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
+        }}
+      />
+    )
+  }
+
+  // Ready page (coach: session setup done, share link)
+  if (page === 'ready') {
+    return (
+      <ReadyPage
+        sessionId={sessionId!}
+        nestName={nestName ?? ''}
+        nestEmoji={nestEmoji}
+        onStart={() => setPage('welcome')}
+        onNavigate={(step) => {
+          if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
+          if (step === 1) setPage('upload-photo')
+        }}
+      />
+    )
+  }
 
   // Overview page
   if (page === 'overview') {
@@ -168,13 +223,20 @@ function App() {
     )
   }
 
+  const allEmojis = NESTS.map(n => n.emoji)
+  const backgroundEmojis = sessionId
+    ? [nestEmoji]
+    : hoveredNest
+      ? [NESTS.find(n => n.name === hoveredNest)!.emoji]
+      : allEmojis
+
   // Welcome page — joining via shared link
   if (sessionId) {
     return (
-      <div className="min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
-        <PretzelBackground />
+      <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+        <NestBackground emojis={backgroundEmojis} />
         <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
-          {nestName ?? 'Nest Checkout'}
+          {nestEmoji.startsWith('/') ? <img src={nestEmoji} className="inline-block w-5 h-5 object-contain align-middle mr-1" /> : nestEmoji} {nestName ?? 'Nest Checkout'}
         </p>
         <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-6">
           Welcome to the<br />Nest Checkout!
@@ -184,7 +246,7 @@ function App() {
         </p>
         <button
           onClick={startWizard}
-          className="bg-nl-purple-dark text-nl-white font-bold text-base px-10 py-4 rounded hover:bg-nl-purple hover:text-nl-black transition-colors"
+          className="relative z-10 bg-nl-purple-dark text-nl-white font-bold text-base px-10 py-4 rounded-xl hover:bg-nl-purple hover:text-nl-black transition-colors cursor-pointer"
         >
           Let's Start 🚀
         </button>
@@ -194,10 +256,9 @@ function App() {
   }
 
   // Welcome page — Nest Coach starting a new session
-  const [selectedNest, setSelectedNest] = [nestName, setNestName]
   return (
-    <div className="min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
-      <PretzelBackground />
+    <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+      <NestBackground emojis={backgroundEmojis} />
 
       <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
         Nest Checkout
@@ -207,42 +268,34 @@ function App() {
         Hey Coach! 👋
       </h1>
 
-      <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-12">
-        Start your weekly Nest Checkout — a moment to celebrate wins,<br />share how you're feeling, and connect as a team.
+      <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-14">
+        Time for the weekly Nest Checkout — pick your Nest below<br />to kick things off and share the link with your team.
       </p>
 
-      <p className="font-semibold text-sm uppercase tracking-widest text-nl-black/40 mb-5">
-        Which Nest are you checking in with?
-      </p>
-
-      <div className="flex gap-4 mb-10">
+      <div className="flex gap-5">
         {NESTS.map(nest => (
-          <button
+          <motion.button
             key={nest.name}
-            onClick={() => setSelectedNest(nest.name)}
-            className={`flex flex-col items-center gap-2 px-8 py-6 rounded-2xl border-2 transition-all
-              ${selectedNest === nest.name
-                ? 'border-nl-purple bg-nl-purple/10 scale-[1.03] shadow-md'
-                : 'border-nl-black/10 bg-nl-white hover:border-nl-purple/40 hover:bg-nl-purple/5'
-              }`}
+            onClick={() => createSession(nest.name)}
+            onMouseEnter={() => setHoveredNest(nest.name)}
+            onMouseLeave={() => setHoveredNest(null)}
+            className="group relative flex flex-col items-center gap-3 w-52 px-6 pt-8 pb-6 rounded-3xl border-2 border-nl-black/10 bg-nl-white hover:border-nl-purple hover:shadow-lg cursor-pointer transition-colors duration-200 text-left"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.99 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            style={{ willChange: 'transform' }}
           >
-            <span className="text-4xl">{nest.emoji}</span>
-            <span className="font-bold text-sm text-nl-black">{nest.name}</span>
-          </button>
+            {nest.emoji.startsWith('/')
+              ? <img src={nest.emoji} className="w-16 h-16 object-contain" />
+              : <span className="text-6xl leading-none">{nest.emoji}</span>
+            }
+            <span className="font-black text-base text-nl-black text-center">{nest.name}</span>
+            <div className="text-xs font-bold uppercase tracking-widest transition-colors text-nl-black/20 group-hover:text-nl-purple">
+              Create session →
+            </div>
+          </motion.button>
         ))}
       </div>
-
-      <button
-        onClick={() => selectedNest && createSession(selectedNest)}
-        disabled={!selectedNest}
-        className={`font-bold text-base px-10 py-4 rounded transition-colors
-          ${selectedNest
-            ? 'bg-nl-purple-dark text-nl-white hover:bg-nl-purple hover:text-nl-black'
-            : 'bg-nl-black/10 text-nl-black/30 cursor-not-allowed'
-          }`}
-      >
-        Start session →
-      </button>
 
       {wizardModal}
     </div>

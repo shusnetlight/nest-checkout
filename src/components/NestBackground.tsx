@@ -17,7 +17,7 @@ const PRETZELS = [
 const MAX_DIST = 320
 const MAX_OPACITY = 0.25
 
-export default function PretzelBackground() {
+export default function NestBackground({ emojis = ['🥨'] }: { emojis?: string[] }) {
   const [mouse, setMouse] = useState({ x: -9999, y: -9999 })
   const [win, setWin] = useState({ w: window.innerWidth, h: window.innerHeight })
 
@@ -42,6 +42,8 @@ export default function PretzelBackground() {
           ? (1 - dist / MAX_DIST) * MAX_OPACITY
           : 0
 
+        const item = emojis[i % emojis.length]
+        const isImage = item.startsWith('/')
         return (
           <motion.div
             key={i}
@@ -51,15 +53,17 @@ export default function PretzelBackground() {
               position: 'absolute',
               left: `${p.x}%`,
               top: `${p.y}%`,
-              fontSize: p.size,
               rotate: p.rot,
               x: '-50%',
               y: '-50%',
-              lineHeight: 1,
               userSelect: 'none',
+              ...(isImage ? {} : { fontSize: p.size, lineHeight: 1 }),
             }}
           >
-            🥨
+            {isImage
+              ? <img src={item} style={{ width: p.size, height: p.size, objectFit: 'contain' }} />
+              : item
+            }
           </motion.div>
         )
       })}

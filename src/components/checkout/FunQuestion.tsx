@@ -13,7 +13,7 @@ interface Props {
   questionIndex: number
 }
 
-export default function StepFunQuestion({ selected, onSelect, questionIndex }: Props) {
+export default function FunQuestion({ selected, onSelect, questionIndex }: Props) {
   const q = useMemo(() => QUESTIONS[questionIndex % QUESTIONS.length], [questionIndex])
 
   return (

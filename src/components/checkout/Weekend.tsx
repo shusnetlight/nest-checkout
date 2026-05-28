@@ -5,7 +5,7 @@ interface Props {
 
 const MAX = 160
 
-export default function StepWeekend({ value, onChange }: Props) {
+export default function Weekend({ value, onChange }: Props) {
   return (
     <div className="flex flex-col gap-6 animate-fade-up">
 

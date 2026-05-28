@@ -46,7 +46,7 @@ function labelAt(xPct: number, yPct: number): string {
   return GRID[row][col]
 }
 
-export default function StepMoodMeter({ emoji, name, selected, onSelect, others = [] }: Props) {
+export default function MoodMeter({ emoji, name, selected, onSelect, others = [] }: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
 

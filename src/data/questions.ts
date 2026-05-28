@@ -12,6 +12,12 @@ export const QUESTIONS: { a: string; b: string }[] = [
   { a: '🔊 Music while working: Always',     b: '🔇 Music while working: Never' },
   { a: '🌙 Peak productivity: Night owl',    b: '🌅 Peak productivity: Early bird' },
   { a: '🍕 Pizza',                           b: '🍝 Pasta' },
-  { a: '🚀 Morning boost: Ice-cold shower',          b: '🌸 Morning boost: Meditation with scented candles' },
+  { a: '🚀 Morning boost: Ice-cold shower',  b: '🌸 Morning boost: Meditation with scented candles' },
+  { a: '🧩 Afterwork: Escape room',          b: '🎮 Afterwork: Mario Kart tournament' },
+  { a: '🐕 Office dog always around',        b: '🐈 Office cat as your sidekick' },
+  { a: '🚲 Commute: Bike',                   b: '🛴 Commute: E-scooter' },
+  { a: '🍔 Lunch: Adventurous street food',  b: '🥗 Lunch: Classic homecooked meal' },
+  { a: '🍰 Dessert: Cheesecake',             b: '🍪 Dessert: Chocolate chip cookies' },
+
 
 ]

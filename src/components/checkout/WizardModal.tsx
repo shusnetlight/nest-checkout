@@ -1,16 +1,12 @@
-import StepIdentity from './steps/StepIdentity'
-import StepMoodMeter, { type MoodSelection } from './steps/StepMoodMeter'
-import StepAchievements from './steps/StepAchievements'
-import StepFunQuestion, { type FunAnswer } from './steps/StepFunQuestion'
-import StepWeekend from './steps/StepWeekend'
+import Identity from './Identity'
+import MoodMeter, { type MoodSelection } from './MoodMeter'
+import Achievements from './Achievements'
+import FunQuestion, { type FunAnswer } from './FunQuestion'
+import Weekend from './Weekend'
+import WeekRecap from './WeekRecap'
 
-const STEPS = [
-  'Your Identity',
-  'Mood Check',
-  'Achievements',
-  'Fun Question',
-  'Weekend Plans',
-]
+const STEPS_BASE    = ['Your Identity', 'Mood Check', 'Achievements', 'Fun Question', 'Weekend Plans']
+const STEPS_PHOTO   = ['Your Identity', 'Mood Check', 'Week Recap', 'Achievements', 'Fun Question', 'Weekend Plans']
 
 interface Draft {
   name: string
@@ -26,6 +22,7 @@ interface Props {
   step: number
   draft: Draft
   questionIndex: number
+  photoUrl: string | null
   onDraftChange: (field: 'name' | 'emoji', value: string) => void
   onMoodChange: (mood: MoodSelection) => void
   onAchievementsChange: (field: 'wins' | 'learnings', items: string[]) => void
@@ -36,22 +33,30 @@ interface Props {
   onClose: () => void
 }
 
-export default function WizardModal({ step, draft, questionIndex, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onNext, onBack, onClose }: Props) {
+export default function WizardModal({ step, draft, questionIndex, photoUrl, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onNext, onBack, onClose }: Props) {
+  const STEPS = photoUrl ? STEPS_PHOTO : STEPS_BASE
   const progress = (step / STEPS.length) * 100
+
+  // With photo: 1=Identity 2=Mood 3=Recap 4=Achievements 5=FunQ 6=Weekend
+  // Without:    1=Identity 2=Mood 3=Achievements 4=FunQ 5=Weekend
+  const p = photoUrl ? 1 : 0 // offset for steps after photo
 
   const canProceed =
     step === 1 ? draft.name.trim() !== '' && draft.emoji !== '' :
     step === 2 ? draft.mood !== null :
-    step === 3 ? draft.wins.length > 0 || draft.learnings.length > 0 :
-    step === 4 ? draft.funAnswer !== null :
-    step === 5 ? draft.weekend.trim() !== '' :
+    photoUrl && step === 3 ? true :
+    step === 3 + p ? draft.wins.length > 0 || draft.learnings.length > 0 :
+    step === 4 + p ? draft.funAnswer !== null :
+    step === 5 + p ? draft.weekend.trim() !== '' :
     true
+
+  const isMoodStep = step === 2
 
   return (
     <div className="fixed inset-0 bg-nl-beige/90 backdrop-blur-sm flex items-center justify-center z-50 px-4 py-6">
 
       <div className={`bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up
-        ${step === 2 ? 'w-fit' : 'w-full max-w-lg'}`}
+        ${isMoodStep ? 'w-fit' : 'w-full max-w-lg'}`}
       >
 
         {/* Progress bar */}
@@ -83,39 +88,22 @@ export default function WizardModal({ step, draft, questionIndex, onDraftChange,
         {/* Step content */}
         <div className="px-8 py-6 overflow-y-auto">
           {step === 1 && (
-            <StepIdentity
-              name={draft.name}
-              emoji={draft.emoji}
-              onChange={onDraftChange}
-            />
+            <Identity name={draft.name} emoji={draft.emoji} onChange={onDraftChange} />
           )}
           {step === 2 && (
-            <StepMoodMeter
-              emoji={draft.emoji}
-              name={draft.name}
-              selected={draft.mood}
-              onSelect={onMoodChange}
-            />
+            <MoodMeter emoji={draft.emoji} name={draft.name} selected={draft.mood} onSelect={onMoodChange} />
           )}
-          {step === 3 && (
-            <StepAchievements
-              wins={draft.wins}
-              learnings={draft.learnings}
-              onChange={onAchievementsChange}
-            />
+          {photoUrl && step === 3 && (
+            <WeekRecap photoUrl={photoUrl} />
           )}
-          {step === 4 && (
-            <StepFunQuestion
-              selected={draft.funAnswer}
-              onSelect={onFunAnswerChange}
-              questionIndex={questionIndex}
-            />
+          {step === 3 + p && (
+            <Achievements wins={draft.wins} learnings={draft.learnings} onChange={onAchievementsChange} />
           )}
-          {step === 5 && (
-            <StepWeekend
-              value={draft.weekend}
-              onChange={onWeekendChange}
-            />
+          {step === 4 + p && (
+            <FunQuestion selected={draft.funAnswer} onSelect={onFunAnswerChange} questionIndex={questionIndex} />
+          )}
+          {step === 5 + p && (
+            <Weekend value={draft.weekend} onChange={onWeekendChange} />
           )}
         </div>
 

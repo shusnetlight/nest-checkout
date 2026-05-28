@@ -6,7 +6,7 @@ interface Props {
   onChange: (field: 'name' | 'emoji', value: string) => void
 }
 
-export default function StepIdentity({ name, emoji, onChange }: Props) {
+export default function Identity({ name, emoji, onChange }: Props) {
   return (
     <div className="flex flex-col gap-8">
 

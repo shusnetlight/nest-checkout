@@ -88,7 +88,7 @@ function BulletInput({
   )
 }
 
-export default function StepAchievements({ wins, learnings, onChange }: Props) {
+export default function Achievements({ wins, learnings, onChange }: Props) {
   return (
     <div className="flex flex-col gap-8">
       <BulletInput

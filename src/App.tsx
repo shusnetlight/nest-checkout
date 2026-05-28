@@ -67,7 +67,6 @@ function App() {
 
   const [songVoteCounts, setSongVoteCounts] = useState<Record<string, number>>({})
   const [songStartedAt, setSongStartedAt] = useState<number | null>(null)
-  const prevWinningSongIdRef = useRef<string | null>(null)
 
   const sessionSongs = useMemo(() => sessionId ? getSessionSongs(sessionId) : ALL_SONGS.slice(0, 3), [sessionId])
 
@@ -77,19 +76,6 @@ function App() {
     return sessionSongs.find(s => s.id === entries[0][0]) ?? null
   }, [songVoteCounts, sessionSongs])
 
-  // Broadcast song start time whenever the winning song changes
-  useEffect(() => {
-    if (winningSong?.id === prevWinningSongIdRef.current) return
-    prevWinningSongIdRef.current = winningSong?.id ?? null
-    if (!winningSong) { setSongStartedAt(null); return }
-    const now = Date.now()
-    setSongStartedAt(now)
-    channelRef.current?.send({
-      type: 'broadcast',
-      event: 'song_start',
-      payload: { songId: winningSong.id, startedAt: now },
-    })
-  }, [winningSong])
 
   function handleLetsStart() {
     const origin = rocketEmojiRef.current ?? letsStartRef.current
@@ -147,8 +133,9 @@ function App() {
         }
       )
       .on('broadcast', { event: 'song_vote' }, (payload) => {
-        const songId = payload.payload?.songId
+        const { songId, startedAt } = payload.payload ?? {}
         if (songId) setSongVoteCounts(prev => ({ ...prev, [songId]: (prev[songId] ?? 0) + 1 }))
+        if (typeof startedAt === 'number') setSongStartedAt(startedAt)
       })
       .on('broadcast', { event: 'song_start' }, (payload) => {
         const { startedAt } = payload.payload ?? {}
@@ -209,8 +196,19 @@ function App() {
 
   async function handleNext() {
     if (wizardStep === 0 && draft.song_choice) {
-      channelRef.current?.send({ type: 'broadcast', event: 'song_vote', payload: { songId: draft.song_choice } })
-      setSongVoteCounts(prev => ({ ...prev, [draft.song_choice!]: (prev[draft.song_choice!] ?? 0) + 1 }))
+      const songId = draft.song_choice
+      const newCounts = { ...songVoteCounts, [songId]: (songVoteCounts[songId] ?? 0) + 1 }
+      const newWinnerId = Object.entries(newCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
+      const oldWinnerId = Object.entries(songVoteCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
+      const winnerChanged = newWinnerId !== oldWinnerId
+      const now = winnerChanged ? Date.now() : null
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'song_vote',
+        payload: { songId, ...(now !== null ? { startedAt: now } : {}) },
+      })
+      setSongVoteCounts(newCounts)
+      if (now !== null) setSongStartedAt(now)
     }
     const totalSteps = sessionPhotoUrl ? 7 : 6
     if (wizardStep < totalSteps) {

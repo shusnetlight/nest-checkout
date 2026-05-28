@@ -37,7 +37,7 @@ export default function NowPlaying({ song, startedAt }: Props) {
       <iframe
         key={song.id}
         ref={iframeRef}
-        src={`https://www.youtube.com/embed/${song.ytId}?autoplay=1&enablejsapi=1&start=${startSecondsRef.current}`}
+        src={`https://www.youtube.com/embed/${song.ytId}?autoplay=1&enablejsapi=1&start=${startSecondsRef.current}&origin=${encodeURIComponent(location.origin)}`}
         width="1"
         height="1"
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}

@@ -8,6 +8,7 @@ import UploadPhotoPage from './components/coach/UploadPhotoPage'
 import ReadyPage from './components/coach/ReadyPage'
 import NowPlaying from './components/NowPlaying'
 import { ALL_SONGS, getSessionSongs } from './lib/songs'
+import { QUESTIONS } from './data/questions'
 import { supabase } from './lib/supabase'
 import type { MoodSelection } from './components/checkout/MoodMeter'
 import type { FunAnswer } from './components/checkout/FunQuestion'
@@ -62,7 +63,7 @@ function App() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const [launchRockets, setLaunchRockets] = useState<{ id: number; x: number; y: number; dx: number; dy: number; duration: number; delay: number }[]>([])
 
-  const questionIndex = useMemo(() => Math.floor(Math.random() * 15), [showWizard]) // eslint-disable-line
+  const questionIndex = useMemo(() => Math.floor(Math.random() * QUESTIONS.length), [showWizard]) // eslint-disable-line
 
   const [songVoteCounts, setSongVoteCounts] = useState<Record<string, number>>({})
 

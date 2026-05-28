@@ -69,8 +69,13 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
       <div className="fixed inset-0 bg-nl-beige/90 backdrop-blur-sm flex items-center justify-center z-50 px-4 py-6">
         <div className="bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up w-full max-w-lg">
 
-          <div className="flex items-center justify-between px-8 pt-6 pb-2">
-            <h2 className="font-black text-2xl text-nl-black">Vote for this week's vibe 🎵</h2>
+          <div className="flex items-start justify-between px-8 pt-6 pb-2">
+            <div>
+              <h2 className="font-black text-2xl text-nl-black">Vote for this week's vibe 🎵</h2>
+              <p className="font-semibold text-xs uppercase tracking-widest text-nl-black/40 mt-1">
+                Das Lied mit den meisten Stimmen wird im Hintergrund gespielt
+              </p>
+            </div>
             <button onClick={onClose} className="text-nl-black/30 hover:text-nl-black text-2xl leading-none transition-colors">×</button>
           </div>
 

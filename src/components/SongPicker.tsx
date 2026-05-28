@@ -9,7 +9,7 @@ interface Props {
 
 export default function SongPicker({ songs, selected, votes: _votes, onSelect }: Props) {
   return (
-    <div className="flex gap-3 justify-center items-stretch">
+    <div className="flex gap-3 justify-center items-stretch pt-2">
       {songs.map(song => {
         const isSelected = selected === song.id
         return (

@@ -246,58 +246,6 @@ function App() {
   )
 
   const nestEmoji = NESTS.find(n => n.name === nestName)?.emoji ?? '🥨'
-
-  // Upload photo page (coach only)
-  if (page === 'upload-photo') {
-    return (
-      <UploadPhotoPage
-        sessionId={sessionId!}
-        nestName={nestName ?? ''}
-        nestEmoji={nestEmoji}
-        onDone={(url) => {
-          if (url) setSessionPhotoUrl(url)
-          setPage('ready')
-        }}
-        onNavigate={(step) => {
-          if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
-        }}
-      />
-    )
-  }
-
-  // Ready page (coach: session setup done, share link)
-  if (page === 'ready') {
-    return (
-      <ReadyPage
-        sessionId={sessionId!}
-        nestName={nestName ?? ''}
-        nestEmoji={nestEmoji}
-        onStart={() => setPage('welcome')}
-        onNavigate={(step) => {
-          if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
-          if (step === 1) setPage('upload-photo')
-        }}
-      />
-    )
-  }
-
-  // Overview page
-  if (page === 'overview') {
-    return (
-      <>
-        <OverviewBoard
-          submissions={submissions}
-          sessionId={sessionId!}
-          nestName={nestName ?? ''}
-          onAddPerson={startWizard}
-          onRestart={handleRestart}
-        />
-        {wizardModal}
-        {winningSong && <NowPlaying song={winningSong} />}
-      </>
-    )
-  }
-
   const allEmojis = NESTS.map(n => n.emoji)
   const backgroundEmojis = sessionId
     ? [nestEmoji]
@@ -305,111 +253,145 @@ function App() {
       ? [NESTS.find(n => n.name === hoveredNest)!.emoji]
       : allEmojis
 
-  // Welcome page — joining via shared link
-  if (sessionId) {
-    return (
-      <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
-        <NestBackground emojis={backgroundEmojis} />
-        <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
-          {nestEmoji.startsWith('/') ? <img src={nestEmoji} className="inline-block w-5 h-5 object-contain align-middle mr-1" /> : nestEmoji} {nestName ?? 'Nest Checkout'}
-        </p>
-        <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-6">
-          Welcome to the<br />Nest Checkout!
-        </h1>
-        <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-12">
-          A weekly space to reflect, celebrate wins, and connect.<br />Ready to check in?
-        </p>
-
-        <button
-          ref={letsStartRef}
-          onClick={handleLetsStart}
-          className="relative z-10 bg-nl-purple-dark text-nl-white font-bold text-base px-10 py-4 rounded-xl hover:bg-nl-purple hover:text-nl-black transition-colors cursor-pointer"
-        >
-          Let's Start <span ref={rocketEmojiRef}>🚀</span>
-        </button>
-
-        <div className="flex gap-3 mt-25">
-          <button
-            onClick={() => { navigator.clipboard.writeText(window.location.href) }}
-            className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
-          >
-            🔗 Share link
-          </button>
-          <button
-            onClick={() => { window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}&view=overview`); setPage('overview') }}
-            className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
-          >
-            Overview →
-          </button>
-        </div>
-
-        {wizardModal}
-        {winningSong && <NowPlaying song={winningSong} />}
-        {createPortal(
-          <AnimatePresence>
-            {launchRockets.map(r => (
-              <motion.div
-                key={r.id}
-                className="fixed pointer-events-none text-2xl z-[999] -translate-x-1/2 -translate-y-1/2"
-                style={{ left: r.x, top: r.y }}
-                initial={{ y: 0, x: 0, opacity: 1, rotate: 0 }}
-                animate={{ y: r.dy, x: r.dx, opacity: 0, rotate: 0 }}
-                transition={{ duration: r.duration, ease: [0.2, 0, 0.3, 1], delay: r.delay }}
-              >
-                🚀
-              </motion.div>
-            ))}
-          </AnimatePresence>,
-          document.body
-        )}
-      </div>
-    )
-  }
-
-  // Welcome page — Nest Coach starting a new session
   return (
-    <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
-      <NestBackground emojis={backgroundEmojis} />
+    <>
+      {page === 'upload-photo' && (
+        <UploadPhotoPage
+          sessionId={sessionId!}
+          nestName={nestName ?? ''}
+          nestEmoji={nestEmoji}
+          onDone={(url) => {
+            if (url) setSessionPhotoUrl(url)
+            setPage('ready')
+          }}
+          onNavigate={(step) => {
+            if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
+          }}
+        />
+      )}
 
-      <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
-        Nest Checkout
-      </p>
+      {page === 'ready' && (
+        <ReadyPage
+          sessionId={sessionId!}
+          nestName={nestName ?? ''}
+          nestEmoji={nestEmoji}
+          onStart={() => setPage('welcome')}
+          onNavigate={(step) => {
+            if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
+            if (step === 1) setPage('upload-photo')
+          }}
+        />
+      )}
 
-      <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-4">
-        Hey Coach! 👋
-      </h1>
+      {page === 'overview' && (
+        <>
+          <OverviewBoard
+            submissions={submissions}
+            sessionId={sessionId!}
+            nestName={nestName ?? ''}
+            onAddPerson={startWizard}
+            onRestart={handleRestart}
+          />
+          {wizardModal}
+        </>
+      )}
 
-      <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-14">
-        Time for the weekly Nest Checkout — pick your Nest below<br />to kick things off and share the link with your team.
-      </p>
-
-      <div className="flex gap-5">
-        {NESTS.map(nest => (
-          <motion.button
-            key={nest.name}
-            onClick={() => createSession(nest.name)}
-            onMouseEnter={() => setHoveredNest(nest.name)}
-            onMouseLeave={() => setHoveredNest(null)}
-            className="group relative flex flex-col items-center gap-3 w-52 px-6 pt-8 pb-6 rounded-3xl border-2 border-nl-black/10 bg-nl-white hover:border-nl-purple hover:shadow-lg cursor-pointer transition-colors duration-200 text-left"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.99 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            style={{ willChange: 'transform' }}
+      {page === 'welcome' && sessionId && (
+        <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+          <NestBackground emojis={backgroundEmojis} />
+          <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
+            {nestEmoji.startsWith('/') ? <img src={nestEmoji} className="inline-block w-5 h-5 object-contain align-middle mr-1" /> : nestEmoji} {nestName ?? 'Nest Checkout'}
+          </p>
+          <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-6">
+            Welcome to the<br />Nest Checkout!
+          </h1>
+          <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-12">
+            A weekly space to reflect, celebrate wins, and connect.<br />Ready to check in?
+          </p>
+          <button
+            ref={letsStartRef}
+            onClick={handleLetsStart}
+            className="relative z-10 bg-nl-purple-dark text-nl-white font-bold text-base px-10 py-4 rounded-xl hover:bg-nl-purple hover:text-nl-black transition-colors cursor-pointer"
           >
-            {nest.emoji.startsWith('/')
-              ? <img src={nest.emoji} className="w-16 h-16 object-contain" />
-              : <span className="text-6xl leading-none">{nest.emoji}</span>
-            }
-            <span className="font-black text-base text-nl-black text-center">{nest.name}</span>
-            <div className="text-xs font-bold uppercase tracking-widest transition-colors text-nl-black/20 group-hover:text-nl-purple">
-              Create session →
-            </div>
-          </motion.button>
-        ))}
-      </div>
+            Let's Start <span ref={rocketEmojiRef}>🚀</span>
+          </button>
+          <div className="flex gap-3 mt-25">
+            <button
+              onClick={() => { navigator.clipboard.writeText(window.location.href) }}
+              className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              🔗 Share link
+            </button>
+            <button
+              onClick={() => { window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}&view=overview`); setPage('overview') }}
+              className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              Overview →
+            </button>
+          </div>
+          {wizardModal}
+          {createPortal(
+            <AnimatePresence>
+              {launchRockets.map(r => (
+                <motion.div
+                  key={r.id}
+                  className="fixed pointer-events-none text-2xl z-[999] -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: r.x, top: r.y }}
+                  initial={{ y: 0, x: 0, opacity: 1, rotate: 0 }}
+                  animate={{ y: r.dy, x: r.dx, opacity: 0, rotate: 0 }}
+                  transition={{ duration: r.duration, ease: [0.2, 0, 0.3, 1], delay: r.delay }}
+                >
+                  🚀
+                </motion.div>
+              ))}
+            </AnimatePresence>,
+            document.body
+          )}
+        </div>
+      )}
 
-      {wizardModal}
-    </div>
+      {page === 'welcome' && !sessionId && (
+        <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+          <NestBackground emojis={backgroundEmojis} />
+          <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
+            Nest Checkout
+          </p>
+          <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-4">
+            Hey Coach! 👋
+          </h1>
+          <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-14">
+            Time for the weekly Nest Checkout — pick your Nest below<br />to kick things off and share the link with your team.
+          </p>
+          <div className="flex gap-5">
+            {NESTS.map(nest => (
+              <motion.button
+                key={nest.name}
+                onClick={() => createSession(nest.name)}
+                onMouseEnter={() => setHoveredNest(nest.name)}
+                onMouseLeave={() => setHoveredNest(null)}
+                className="group relative flex flex-col items-center gap-3 w-52 px-6 pt-8 pb-6 rounded-3xl border-2 border-nl-black/10 bg-nl-white hover:border-nl-purple hover:shadow-lg cursor-pointer transition-colors duration-200 text-left"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.99 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                style={{ willChange: 'transform' }}
+              >
+                {nest.emoji.startsWith('/')
+                  ? <img src={nest.emoji} className="w-16 h-16 object-contain" />
+                  : <span className="text-6xl leading-none">{nest.emoji}</span>
+                }
+                <span className="font-black text-base text-nl-black text-center">{nest.name}</span>
+                <div className="text-xs font-bold uppercase tracking-widest transition-colors text-nl-black/20 group-hover:text-nl-purple">
+                  Create session →
+                </div>
+              </motion.button>
+            ))}
+          </div>
+          {wizardModal}
+        </div>
+      )}
+
+      {winningSong && <NowPlaying song={winningSong} />}
+    </>
   )
 }
 

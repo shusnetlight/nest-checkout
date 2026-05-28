@@ -6,6 +6,8 @@ import NestBackground from './components/NestBackground'
 import OverviewBoard, { type Submission } from './components/OverviewBoard'
 import UploadPhotoPage from './components/coach/UploadPhotoPage'
 import ReadyPage from './components/coach/ReadyPage'
+import NowPlaying from './components/NowPlaying'
+import { ALL_SONGS, getSessionSongs } from './lib/songs'
 import { supabase } from './lib/supabase'
 import type { MoodSelection } from './components/checkout/MoodMeter'
 import type { FunAnswer } from './components/checkout/FunQuestion'
@@ -20,6 +22,7 @@ export interface Draft {
   funAnswer: FunAnswer | null
   weekend: string
   drawing: DrawingStroke[]
+  song_choice?: string
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -56,9 +59,20 @@ function App() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
   const letsStartRef = useRef<HTMLButtonElement>(null)
   const rocketEmojiRef = useRef<HTMLSpanElement>(null)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const [launchRockets, setLaunchRockets] = useState<{ id: number; x: number; y: number; dx: number; dy: number; duration: number; delay: number }[]>([])
 
   const questionIndex = useMemo(() => Math.floor(Math.random() * 15), [showWizard]) // eslint-disable-line
+
+  const [songVoteCounts, setSongVoteCounts] = useState<Record<string, number>>({})
+
+  const sessionSongs = useMemo(() => sessionId ? getSessionSongs(sessionId) : ALL_SONGS.slice(0, 3), [sessionId])
+
+  const winningSong = useMemo(() => {
+    const entries = Object.entries(songVoteCounts).sort((a, b) => b[1] - a[1])
+    if (!entries.length) return null
+    return sessionSongs.find(s => s.id === entries[0][0]) ?? null
+  }, [songVoteCounts, sessionSongs])
 
   function handleLetsStart() {
     const origin = rocketEmojiRef.current ?? letsStartRef.current
@@ -75,12 +89,14 @@ function App() {
         { dx: 100, dy: -400, duration: 0.7, delay: 0.09 },
         { dx: 250, dy: -440, duration: 0.95, delay: 0.02 },
       ]
-      setLaunchRockets(
-        spread.map((s, i) => ({ id: Date.now() + i, x: cx, y: cy, ...s }))
-      )
+      setLaunchRockets(spread.map((s, i) => ({ id: Date.now() + i, x: cx, y: cy, ...s })))
       setTimeout(() => setLaunchRockets([]), 1200)
     }
-    setTimeout(startWizard, 500)
+    setTimeout(() => {
+      setDraft(EMPTY_DRAFT)
+      setWizardStep(0)
+      setShowWizard(true)
+    }, 500)
   }
 
   const loadAndSubscribe = useCallback(async (sid: string) => {
@@ -92,9 +108,15 @@ function App() {
 
     if (data) {
       setSubmissions(data.map((row, i) => ({ ...row.data, colorIdx: i })))
+      const counts: Record<string, number> = {}
+      for (const row of data) {
+        const choice = row.data?.song_choice
+        if (choice) counts[choice] = (counts[choice] ?? 0) + 1
+      }
+      setSongVoteCounts(counts)
     }
 
-    supabase
+    const channel = supabase
       .channel(`session-${sid}`)
       .on(
         'postgres_changes',
@@ -107,7 +129,12 @@ function App() {
           })
         }
       )
+      .on('broadcast', { event: 'song_vote' }, (payload) => {
+        const songId = payload.payload?.songId
+        if (songId) setSongVoteCounts(prev => ({ ...prev, [songId]: (prev[songId] ?? 0) + 1 }))
+      })
       .subscribe()
+    channelRef.current = channel
   }, [])
 
   // On mount: check URL for session, nest and view
@@ -157,6 +184,10 @@ function App() {
   }
 
   async function handleNext() {
+    if (wizardStep === 0 && draft.song_choice) {
+      channelRef.current?.send({ type: 'broadcast', event: 'song_vote', payload: { songId: draft.song_choice } })
+      setSongVoteCounts(prev => ({ ...prev, [draft.song_choice!]: (prev[draft.song_choice!] ?? 0) + 1 }))
+    }
     const totalSteps = sessionPhotoUrl ? 7 : 6
     if (wizardStep < totalSteps) {
       setWizardStep(s => s + 1)
@@ -174,14 +205,18 @@ function App() {
   }
 
   function handleBack() {
-    if (wizardStep === 1) setShowWizard(false)
+    if (wizardStep === 0) setShowWizard(false)
     else setWizardStep(s => s - 1)
   }
 
   function startWizard() {
     setDraft(EMPTY_DRAFT)
-    setWizardStep(1)
+    setWizardStep(0)
     setShowWizard(true)
+  }
+
+  function handleSongChange(id: string) {
+    setDraft(prev => ({ ...prev, song_choice: id }))
   }
 
   function handleRestart() {
@@ -195,6 +230,9 @@ function App() {
       draft={draft}
       questionIndex={questionIndex}
       photoUrl={sessionPhotoUrl}
+      songs={sessionSongs}
+      songVotes={songVoteCounts}
+      onSongChange={handleSongChange}
       onDraftChange={handleDraftChange}
       onMoodChange={handleMoodChange}
       onAchievementsChange={handleAchievementsChange}
@@ -255,6 +293,7 @@ function App() {
           onRestart={handleRestart}
         />
         {wizardModal}
+        {winningSong && <NowPlaying song={winningSong} />}
       </>
     )
   }
@@ -280,6 +319,7 @@ function App() {
         <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-12">
           A weekly space to reflect, celebrate wins, and connect.<br />Ready to check in?
         </p>
+
         <button
           ref={letsStartRef}
           onClick={handleLetsStart}
@@ -290,7 +330,7 @@ function App() {
 
         <div className="flex gap-3 mt-25">
           <button
-            onClick={() => { navigator.clipboard.writeText(window.location.href); }}
+            onClick={() => { navigator.clipboard.writeText(window.location.href) }}
             className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
           >
             🔗 Share link
@@ -304,6 +344,7 @@ function App() {
         </div>
 
         {wizardModal}
+        {winningSong && <NowPlaying song={winningSong} />}
         {createPortal(
           <AnimatePresence>
             {launchRockets.map(r => (

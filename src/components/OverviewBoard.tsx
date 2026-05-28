@@ -315,7 +315,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, onAddP
           </div>
           <div>
             <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">
-              Let's Co-Create
+              Team Canvas
             </h2>
             <TeamCanvas submissions={submissions} />
           </div>

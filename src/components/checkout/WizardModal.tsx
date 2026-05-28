@@ -7,6 +7,8 @@ import FunQuestion, { type FunAnswer } from './FunQuestion'
 import Weekend from './Weekend'
 import WeekRecap from './WeekRecap'
 import Drawing, { type DrawingStroke } from './Drawing'
+import SongPicker from '../SongPicker'
+import type { Song } from '../../lib/songs'
 
 const STEPS_BASE    = ['Your Identity', 'Mood Check', 'Achievements', 'Fun Question', 'Weekend Plans', "Let's Co-Create"]
 const STEPS_PHOTO   = ['Your Identity', 'Mood Check', 'Week Recap', 'Achievements', 'Fun Question', 'Weekend Plans', "Let's Co-Create"]
@@ -20,6 +22,7 @@ interface Draft {
   funAnswer: FunAnswer | null
   weekend: string
   drawing: DrawingStroke[]
+  song_choice?: string
 }
 
 interface Props {
@@ -27,6 +30,9 @@ interface Props {
   draft: Draft
   questionIndex: number
   photoUrl: string | null
+  songs: Song[]
+  songVotes: Record<string, number>
+  onSongChange: (id: string) => void
   onDraftChange: (field: 'name' | 'emoji', value: string) => void
   onMoodChange: (mood: MoodSelection) => void
   onAchievementsChange: (field: 'wins' | 'learnings', items: string[]) => void
@@ -38,7 +44,7 @@ interface Props {
   onClose: () => void
 }
 
-export default function WizardModal({ step, draft, questionIndex, photoUrl, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onDrawingChange, onNext, onBack, onClose }: Props) {
+export default function WizardModal({ step, draft, questionIndex, photoUrl, songs, songVotes, onSongChange, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onDrawingChange, onNext, onBack, onClose }: Props) {
   const STEPS = photoUrl ? STEPS_PHOTO : STEPS_BASE
   const submitRef = useRef<HTMLButtonElement>(null)
 
@@ -56,11 +62,54 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, onDr
     }
     onNext()
   }
-  const progress = (step / STEPS.length) * 100
 
-  // With photo: 1=Identity 2=Mood 3=Recap 4=Achievements 5=FunQ 6=Weekend
-  // Without:    1=Identity 2=Mood 3=Achievements 4=FunQ 5=Weekend
-  const p = photoUrl ? 1 : 0 // offset for steps after photo
+  // ── Step 0: Song picker (no progress bar) ─────────────────────────────────
+  if (step === 0) {
+    return (
+      <div className="fixed inset-0 bg-nl-beige/90 backdrop-blur-sm flex items-center justify-center z-50 px-4 py-6">
+        <div className="bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up w-full max-w-lg">
+
+          <div className="flex items-center justify-between px-8 pt-6 pb-2">
+            <h2 className="font-black text-2xl text-nl-black">Vote for this week's vibe 🎵</h2>
+            <button onClick={onClose} className="text-nl-black/30 hover:text-nl-black text-2xl leading-none transition-colors">×</button>
+          </div>
+
+          <div className="px-8 py-6">
+            <SongPicker
+              songs={songs}
+              selected={draft.song_choice ?? null}
+              votes={songVotes}
+              onSelect={onSongChange}
+            />
+          </div>
+
+          <div className="flex items-center justify-between px-8 py-5 border-t border-nl-black/10">
+            <button
+              onClick={onBack}
+              className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onNext}
+              disabled={!draft.song_choice}
+              className={`font-bold text-sm px-8 py-3 rounded-xl transition-colors
+                ${draft.song_choice
+                  ? 'bg-nl-black text-nl-white hover:bg-nl-purple-dark'
+                  : 'bg-nl-black/10 text-nl-black/30 cursor-not-allowed'
+                }`}
+            >
+              Continue →
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Steps 1+: normal wizard ────────────────────────────────────────────────
+  const progress = (step / STEPS.length) * 100
+  const p = photoUrl ? 1 : 0
 
   const canProceed =
     step === 1 ? draft.name.trim() !== '' && draft.emoji !== '' :
@@ -75,7 +124,6 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, onDr
 
   return (
     <div className="fixed inset-0 bg-nl-beige/90 backdrop-blur-sm flex items-center justify-center z-50 px-4 py-6">
-
       <div className={`bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up
         ${isMoodStep ? 'w-fit' : 'w-full max-w-lg'}`}
       >
@@ -137,7 +185,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, onDr
             onClick={onBack}
             className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors"
           >
-            {step === 1 ? 'Cancel' : '← Back'}
+            {step === 1 ? '← Back' : '← Back'}
           </button>
           <button
             ref={submitRef}

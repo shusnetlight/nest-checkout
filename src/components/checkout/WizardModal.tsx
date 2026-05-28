@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+import confetti from 'canvas-confetti'
 import Identity from './Identity'
 import MoodMeter, { type MoodSelection } from './MoodMeter'
 import Achievements from './Achievements'
@@ -35,6 +37,22 @@ interface Props {
 
 export default function WizardModal({ step, draft, questionIndex, photoUrl, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onNext, onBack, onClose }: Props) {
   const STEPS = photoUrl ? STEPS_PHOTO : STEPS_BASE
+  const submitRef = useRef<HTMLButtonElement>(null)
+
+  function handleNext() {
+    if (step === STEPS.length && submitRef.current) {
+      const rect = submitRef.current.getBoundingClientRect()
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: {
+          x: (rect.left + rect.width / 2) / window.innerWidth,
+          y: (rect.top + rect.height / 2) / window.innerHeight,
+        },
+      })
+    }
+    onNext()
+  }
   const progress = (step / STEPS.length) * 100
 
   // With photo: 1=Identity 2=Mood 3=Recap 4=Achievements 5=FunQ 6=Weekend
@@ -116,7 +134,8 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, onDr
             {step === 1 ? 'Cancel' : '← Back'}
           </button>
           <button
-            onClick={onNext}
+            ref={submitRef}
+            onClick={handleNext}
             disabled={!canProceed}
             className={`font-bold text-sm px-8 py-3 rounded-xl transition-colors
               ${canProceed

@@ -200,10 +200,10 @@ interface Props {
   sessionId: string
   nestName: string
   onAddPerson: () => void
-  onReset: () => void
+  onRestart: () => void
 }
 
-export default function OverviewBoard({ submissions, sessionId, nestName, onAddPerson: _onAddPerson, onReset }: Props) {
+export default function OverviewBoard({ submissions, sessionId, nestName, onAddPerson: _onAddPerson, onRestart }: Props) {
   const toSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
@@ -243,10 +243,10 @@ export default function OverviewBoard({ submissions, sessionId, nestName, onAddP
         </div>
         <div className="flex gap-3 items-center">
           <button
-            onClick={onReset}
+            onClick={onRestart}
             className="font-semibold text-xs text-nl-black/30 hover:text-nl-black/60 transition-colors"
           >
-            Reset
+            Restart
           </button>
           <button
             onClick={copyLink}

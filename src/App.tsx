@@ -129,7 +129,11 @@ function App() {
     if (wizardStep < totalSteps) {
       setWizardStep(s => s + 1)
     } else {
-      await supabase.from('submissions').insert({ session_id: sessionId, data: draft })
+      await supabase.from('sessions').upsert({ id: sessionId })
+      const { error } = await supabase.from('submissions').insert({ session_id: sessionId, data: draft })
+      if (!error) {
+        setSubmissions(prev => [...prev, { ...draft, colorIdx: prev.length }])
+      }
       setShowWizard(false)
       setDraft(EMPTY_DRAFT)
       window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}&view=overview`)
@@ -148,10 +152,9 @@ function App() {
     setShowWizard(true)
   }
 
-  async function handleReset() {
-    if (!sessionId) return
-    await supabase.from('submissions').delete().eq('session_id', sessionId)
-    setSubmissions([])
+  function handleRestart() {
+    window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}`)
+    setPage('welcome')
   }
 
   const wizardModal = showWizard && (
@@ -216,7 +219,7 @@ function App() {
           sessionId={sessionId!}
           nestName={nestName ?? ''}
           onAddPerson={startWizard}
-          onReset={handleReset}
+          onRestart={handleRestart}
         />
         {wizardModal}
       </>

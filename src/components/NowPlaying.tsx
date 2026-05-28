@@ -30,30 +30,32 @@ export default function NowPlaying({ song }: { song: Song }) {
         title={song.title}
       />
 
-      <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl shadow-xl border border-nl-black/10 bg-nl-white">
+      <div className="flex items-center gap-4 px-5 py-3 rounded-2xl shadow-xl border border-nl-black/10 bg-nl-white">
         <div className="text-left min-w-0">
           <p className="text-xs font-black text-nl-black leading-tight truncate">{song.title}</p>
           <p className="text-[10px] text-nl-black/50 leading-tight truncate">{song.artist}</p>
         </div>
-        <div className="flex items-end gap-0.5 shrink-0 h-4">
-          {[3, 5, 2, 4, 3].map((h, i) => (
-            <div
-              key={i}
-              className="w-0.5 rounded-full bg-nl-purple-dark"
-              style={{
-                height: `${h * 3}px`,
-                animation: muted ? 'none' : `bounce 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
-                opacity: muted ? 0.3 : 1,
-              }}
-            />
-          ))}
-        </div>
         <button
           onClick={toggleMute}
-          className="text-sm leading-none text-nl-black/30 hover:text-nl-black transition-colors ml-1 cursor-pointer"
+          className="flex items-center gap-1.5 shrink-0 cursor-pointer group"
           title={muted ? 'Unmute' : 'Mute'}
         >
-          {muted ? '🔇' : '🔊'}
+          <span className="text-sm leading-none text-nl-black/30 group-hover:text-nl-black transition-colors">
+            {muted ? '🔇' : '🔊'}
+          </span>
+          <div className="flex items-end gap-0.5 h-4">
+            {[3, 5, 2, 4, 3].map((h, i) => (
+              <div
+                key={i}
+                className="w-0.5 rounded-full bg-nl-purple-dark"
+                style={{
+                  height: `${h * 3}px`,
+                  animation: muted ? 'none' : `bounce 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
+                  opacity: muted ? 0.3 : 1,
+                }}
+              />
+            ))}
+          </div>
         </button>
       </div>
     </div>

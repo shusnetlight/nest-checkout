@@ -31,7 +31,6 @@ export default function NowPlaying({ song }: { song: Song }) {
       />
 
       <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl shadow-xl border border-nl-black/10 bg-nl-white">
-        <span className="text-base leading-none">{song.emoji}</span>
         <div className="text-left min-w-0">
           <p className="text-xs font-black text-nl-black leading-tight truncate">{song.title}</p>
           <p className="text-[10px] text-nl-black/50 leading-tight truncate">{song.artist}</p>

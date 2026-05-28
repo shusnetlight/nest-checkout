@@ -137,16 +137,30 @@ function App() {
         if (songId) setSongVoteCounts(prev => ({ ...prev, [songId]: (prev[songId] ?? 0) + 1 }))
         if (typeof startedAt === 'number') setSongStartedAt(startedAt)
       })
-      .on('broadcast', { event: 'song_start' }, (payload) => {
-        const { startedAt } = payload.payload ?? {}
-        if (typeof startedAt === 'number') {
-          // Take the earliest timestamp — first broadcast is authoritative
-          setSongStartedAt(prev => (prev === null || startedAt < prev) ? startedAt : prev)
+      .on('presence', { event: 'sync' }, () => {
+        // When joining, pull the earliest startedAt from any presence state
+        const state = channel.presenceState<{ startedAt: number | null }>()
+        let earliest: number | null = null
+        for (const presences of Object.values(state)) {
+          for (const p of presences) {
+            if (typeof p.startedAt === 'number') {
+              if (earliest === null || p.startedAt < earliest) earliest = p.startedAt
+            }
+          }
         }
+        if (earliest !== null) setSongStartedAt(prev => prev === null ? earliest : prev)
       })
       .subscribe()
     channelRef.current = channel
+    channel.track({ startedAt: null })
   }, [])
+
+  // Broadcast our startedAt via Presence so late joiners can sync
+  useEffect(() => {
+    if (channelRef.current && songStartedAt !== null) {
+      channelRef.current.track({ startedAt: songStartedAt })
+    }
+  }, [songStartedAt])
 
   // On mount: check URL for session, nest and view
   useEffect(() => {
@@ -412,7 +426,7 @@ function App() {
         </div>
       )}
 
-      {winningSong && <NowPlaying song={winningSong} startedAt={songStartedAt} />}
+      {winningSong && !(showWizard && wizardStep === 0) && <NowPlaying song={winningSong} startedAt={songStartedAt} />}
     </>
   )
 }

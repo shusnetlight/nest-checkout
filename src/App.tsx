@@ -152,8 +152,9 @@ function App() {
       if (nest) setNestName(fromSlug(nest))
       loadAndSubscribe(sid)
       if (view === 'overview') setPage('overview')
-      supabase.from('sessions').select('photo_url').eq('id', sid).single().then(({ data }) => {
+      supabase.from('sessions').select('photo_url, song_started_at').eq('id', sid).single().then(({ data }) => {
         if (data?.photo_url) setSessionPhotoUrl(data.photo_url)
+        if (typeof data?.song_started_at === 'number') setSongStartedAt(data.song_started_at)
       })
     }
   }, [loadAndSubscribe])
@@ -200,6 +201,9 @@ function App() {
         event: 'song_vote',
         payload: { songId, ...(now !== null ? { startedAt: now } : {}) },
       })
+      if (now !== null) {
+        supabase.from('sessions').upsert({ id: sessionId, song_started_at: now })
+      }
       setSongVoteCounts(newCounts)
       if (now !== null) setSongStartedAt(now)
     }

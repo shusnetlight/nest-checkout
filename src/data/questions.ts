@@ -31,6 +31,11 @@ export const QUESTIONS: { a: string; b: string }[] = [
   { a: '🧊 Icebreaker: Two truths and a lie',                 b: '🤔 Icebreaker: Would You Rather?' },
   { a: '⏳ Time stops for 10 minutes every hour',             b: '🌪️ You can fast-forward through boring meetings' },
   { a: '🍿 Project kickoff with popcorn',                      b: '🍩 Project kickoff with donuts' },
+  { a: '🎥 Work from home every Friday',                      b: '🎥 Work from office every Friday' },
+  { a: '👯 Work most often in pairs',                        b: '🧑‍🎤 Prefer solo deep work' },
+  { a: '🤝 Always join afterwork team events',               b: '🏡 Prefer personal downtime after work' },
+  { a: '🌄 Start work early and finish early',                b: '🌙 Start later and finish later' },
+
 
 
 

@@ -102,6 +102,11 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes equalizer {
+  0%   { transform: scaleY(0.2); }
+  100% { transform: scaleY(1);   }
+}
+
 @theme {
   /* Netlight Purple (primary) */
   --color-nl-purple: #A29AFF;

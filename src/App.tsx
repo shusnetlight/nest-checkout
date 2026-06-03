@@ -65,16 +65,9 @@ function App() {
 
   const questionIndex = useMemo(() => Math.floor(Math.random() * QUESTIONS.length), [showWizard]) // eslint-disable-line
 
-  const [songVoteCounts, setSongVoteCounts] = useState<Record<string, number>>({})
-  const [songStartedAt, setSongStartedAt] = useState<number | null>(null)
+  const [currentSongId, setCurrentSongId] = useState<string | null>(null)
 
   const sessionSongs = useMemo(() => sessionId ? getSessionSongs(sessionId) : ALL_SONGS.slice(0, 3), [sessionId])
-
-  const winningSong = useMemo(() => {
-    const entries = Object.entries(songVoteCounts).sort((a, b) => b[1] - a[1])
-    if (!entries.length) return null
-    return sessionSongs.find(s => s.id === entries[0][0]) ?? null
-  }, [songVoteCounts, sessionSongs])
 
 
   function handleLetsStart() {
@@ -111,12 +104,6 @@ function App() {
 
     if (data) {
       setSubmissions(data.map((row, i) => ({ ...row.data, colorIdx: i })))
-      const counts: Record<string, number> = {}
-      for (const row of data) {
-        const choice = row.data?.song_choice
-        if (choice) counts[choice] = (counts[choice] ?? 0) + 1
-      }
-      setSongVoteCounts(counts)
     }
 
     const channel = supabase
@@ -132,11 +119,6 @@ function App() {
           })
         }
       )
-      .on('broadcast', { event: 'song_vote' }, (payload) => {
-        const { songId, startedAt } = payload.payload ?? {}
-        if (songId) setSongVoteCounts(prev => ({ ...prev, [songId]: (prev[songId] ?? 0) + 1 }))
-        if (typeof startedAt === 'number') setSongStartedAt(startedAt)
-      })
       .subscribe()
     channelRef.current = channel
   }, [])
@@ -152,9 +134,8 @@ function App() {
       if (nest) setNestName(fromSlug(nest))
       loadAndSubscribe(sid)
       if (view === 'overview') setPage('overview')
-      supabase.from('sessions').select('photo_url, song_started_at').eq('id', sid).single().then(({ data }) => {
+      supabase.from('sessions').select('photo_url').eq('id', sid).single().then(({ data }) => {
         if (data?.photo_url) setSessionPhotoUrl(data.photo_url)
-        if (typeof data?.song_started_at === 'number') setSongStartedAt(data.song_started_at)
       })
     }
   }, [loadAndSubscribe])
@@ -190,22 +171,7 @@ function App() {
 
   async function handleNext() {
     if (wizardStep === 0 && draft.song_choice) {
-      const songId = draft.song_choice
-      const newCounts = { ...songVoteCounts, [songId]: (songVoteCounts[songId] ?? 0) + 1 }
-      const newWinnerId = Object.entries(newCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
-      const oldWinnerId = Object.entries(songVoteCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
-      const winnerChanged = newWinnerId !== oldWinnerId
-      const now = winnerChanged ? Date.now() : null
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'song_vote',
-        payload: { songId, ...(now !== null ? { startedAt: now } : {}) },
-      })
-      if (now !== null) {
-        supabase.from('sessions').upsert({ id: sessionId, song_started_at: now })
-      }
-      setSongVoteCounts(newCounts)
-      if (now !== null) setSongStartedAt(now)
+      setCurrentSongId(draft.song_choice)
     }
     const totalSteps = sessionPhotoUrl ? 7 : 6
     if (wizardStep < totalSteps) {
@@ -215,6 +181,8 @@ function App() {
       const { error } = await supabase.from('submissions').insert({ session_id: sessionId, data: draft })
       if (!error) {
         setSubmissions(prev => [...prev, { ...draft, colorIdx: prev.length }])
+        localStorage.setItem('nest-user-name', draft.name)
+        localStorage.setItem('nest-user-emoji', draft.emoji)
       }
       setShowWizard(false)
       setDraft(EMPTY_DRAFT)
@@ -250,7 +218,6 @@ function App() {
       questionIndex={questionIndex}
       photoUrl={sessionPhotoUrl}
       songs={sessionSongs}
-      songVotes={songVoteCounts}
       onSongChange={handleSongChange}
       onDraftChange={handleDraftChange}
       onMoodChange={handleMoodChange}
@@ -308,6 +275,7 @@ function App() {
             submissions={submissions}
             sessionId={sessionId!}
             nestName={nestName ?? ''}
+            nestEmoji={nestEmoji}
             onAddPerson={startWizard}
             onRestart={handleRestart}
           />
@@ -409,7 +377,7 @@ function App() {
         </div>
       )}
 
-      {winningSong && <NowPlaying song={winningSong} startedAt={songStartedAt} />}
+      {currentSongId && <NowPlaying songs={sessionSongs} initialSongId={currentSongId} />}
     </>
   )
 }

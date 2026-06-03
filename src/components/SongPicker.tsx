@@ -3,11 +3,10 @@ import type { Song } from '../lib/songs'
 interface Props {
   songs: Song[]
   selected: string | null
-  votes: Record<string, number>
   onSelect: (id: string) => void
 }
 
-export default function SongPicker({ songs, selected, votes: _votes, onSelect }: Props) {
+export default function SongPicker({ songs, selected, onSelect }: Props) {
   return (
     <div className="flex gap-3 justify-center items-stretch pt-2">
       {songs.map(song => {

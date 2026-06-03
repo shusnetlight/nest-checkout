@@ -1,4 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { Paintbrush } from 'lucide-react'
 
 export interface DrawingStroke {
   color: string
@@ -53,6 +55,7 @@ export default function Drawing({ strokes, onChange }: Props) {
   const [width, setWidth] = useState(WIDTHS[0])
   const drawing = useRef(false)
   const currentPoints = useRef<{ x: number; y: number }[]>([])
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -80,6 +83,7 @@ export default function Drawing({ strokes, onChange }: Props) {
 
   function onMove(e: React.MouseEvent | React.TouchEvent) {
     e.preventDefault()
+    if ('clientX' in e) setCursorPos({ x: e.clientX, y: e.clientY })
     if (!drawing.current) return
     const pos = getPos(e)
     currentPoints.current.push(pos)
@@ -107,6 +111,7 @@ export default function Drawing({ strokes, onChange }: Props) {
   }
 
   return (
+    <>
     <div className="flex flex-col gap-4 animate-fade-up">
       <p className="font-semibold text-sm uppercase tracking-widest text-nl-black/50">
         Leave your mark on this week's team canvas.
@@ -116,11 +121,12 @@ export default function Drawing({ strokes, onChange }: Props) {
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        className="rounded-xl border border-nl-black/10 bg-white w-full cursor-crosshair touch-none"
+        className="rounded-xl border border-nl-black/10 bg-white w-full touch-none"
+        style={{ cursor: 'none' }}
         onMouseDown={onStart}
         onMouseMove={onMove}
         onMouseUp={onEnd}
-        onMouseLeave={onEnd}
+        onMouseLeave={() => { onEnd(); setCursorPos(null) }}
         onTouchStart={onStart}
         onTouchMove={onMove}
         onTouchEnd={onEnd}
@@ -177,5 +183,16 @@ export default function Drawing({ strokes, onChange }: Props) {
         </div>
       </div>
     </div>
+
+    {cursorPos && createPortal(
+      <div
+        className="fixed pointer-events-none z-[9999]"
+        style={{ left: cursorPos.x - 2, top: cursorPos.y - 20 }}
+      >
+        <Paintbrush size={22} strokeWidth={1.8} style={{ color, transform: 'rotate(0deg)' }} />
+      </div>,
+      document.body
+    )}
+    </>
   )
 }

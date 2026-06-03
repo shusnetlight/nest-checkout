@@ -1,24 +1,24 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, forwardRef, useImperativeHandle } from 'react'
 
 interface Props {
   wins: string[]
   learnings: string[]
   onChange: (field: 'wins' | 'learnings', items: string[]) => void
+  onPendingChange?: (pending: { wins: boolean; learnings: boolean }) => void
 }
 
-function BulletInput({
-  label,
-  placeholder,
-  items,
-  onAdd,
-  onRemove,
-}: {
+export interface AchievementsRef {
+  flush: () => void
+}
+
+const BulletInput = forwardRef<{ flush: () => void }, {
   label: string
   placeholder: string
   items: string[]
   onAdd: (val: string) => void
   onRemove: (i: number) => void
-}) {
+  onPendingChange?: (hasPending: boolean) => void
+}>(function BulletInput({ label, placeholder, items, onAdd, onRemove, onPendingChange }, ref) {
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -27,7 +27,15 @@ function BulletInput({
     if (!trimmed) return
     onAdd(trimmed)
     setValue('')
+    onPendingChange?.(false)
     inputRef.current?.focus()
+  }
+
+  useImperativeHandle(ref, () => ({ flush: submit }))
+
+  function handleChange(v: string) {
+    setValue(v)
+    onPendingChange?.(v.trim() !== '')
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -67,7 +75,7 @@ function BulletInput({
           ref={inputRef}
           type="text"
           value={value}
-          onChange={e => setValue(e.target.value)}
+          onChange={e => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="flex-1 border-2 border-nl-black/10 focus:border-nl-purple outline-none px-4 py-2.5 text-sm font-normal text-nl-black placeholder:text-nl-black/30 transition-colors rounded-xl"
@@ -86,25 +94,44 @@ function BulletInput({
       </div>
     </div>
   )
-}
+})
 
-export default function Achievements({ wins, learnings, onChange }: Props) {
+const Achievements = forwardRef<AchievementsRef, Props>(function Achievements({ wins, learnings, onChange, onPendingChange }, ref) {
+  const winsRef = useRef<{ flush: () => void }>(null)
+  const learningsRef = useRef<{ flush: () => void }>(null)
+  const pendingRef = useRef({ wins: false, learnings: false })
+
+  useImperativeHandle(ref, () => ({
+    flush: () => { winsRef.current?.flush(); learningsRef.current?.flush() },
+  }))
+
+  function notify(field: 'wins' | 'learnings', hasPending: boolean) {
+    pendingRef.current[field] = hasPending
+    onPendingChange?.({ ...pendingRef.current })
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <BulletInput
+        ref={winsRef}
         label="What's your greatest achievement this week?"
         placeholder="e.g. nailed a G2K, finishing self-reflection..."
         items={wins}
         onAdd={val => onChange('wins', [...wins, val])}
         onRemove={i => onChange('wins', wins.filter((_, idx) => idx !== i))}
+        onPendingChange={v => notify('wins', v)}
       />
       <BulletInput
+        ref={learningsRef}
         label="What's your biggest learning this week?"
         placeholder="e.g. whiteboard sucks..."
         items={learnings}
         onAdd={val => onChange('learnings', [...learnings, val])}
         onRemove={i => onChange('learnings', learnings.filter((_, idx) => idx !== i))}
+        onPendingChange={v => notify('learnings', v)}
       />
     </div>
   )
-}
+})
+
+export default Achievements

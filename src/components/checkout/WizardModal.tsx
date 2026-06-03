@@ -1,8 +1,8 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
 import Identity from './Identity'
 import MoodMeter, { type MoodSelection } from './MoodMeter'
-import Achievements from './Achievements'
+import Achievements, { type AchievementsRef } from './Achievements'
 import FunQuestion, { type FunAnswer } from './FunQuestion'
 import Weekend from './Weekend'
 import WeekRecap from './WeekRecap'
@@ -31,7 +31,6 @@ interface Props {
   questionIndex: number
   photoUrl: string | null
   songs: Song[]
-  songVotes: Record<string, number>
   onSongChange: (id: string) => void
   onDraftChange: (field: 'name' | 'emoji', value: string) => void
   onMoodChange: (mood: MoodSelection) => void
@@ -44,11 +43,14 @@ interface Props {
   onClose: () => void
 }
 
-export default function WizardModal({ step, draft, questionIndex, photoUrl, songs, songVotes, onSongChange, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onDrawingChange, onNext, onBack, onClose }: Props) {
+export default function WizardModal({ step, draft, questionIndex, photoUrl, songs, onSongChange, onDraftChange, onMoodChange, onAchievementsChange, onFunAnswerChange, onWeekendChange, onDrawingChange, onNext, onBack, onClose }: Props) {
   const STEPS = photoUrl ? STEPS_PHOTO : STEPS_BASE
   const submitRef = useRef<HTMLButtonElement>(null)
+  const achievementsRef = useRef<AchievementsRef>(null)
+  const [achievementsPending, setAchievementsPending] = useState({ wins: false, learnings: false })
 
   function handleNext() {
+    achievementsRef.current?.flush()
     if (step === STEPS.length && submitRef.current) {
       const rect = submitRef.current.getBoundingClientRect()
       confetti({
@@ -71,9 +73,9 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
 
           <div className="flex items-center justify-between px-8 pt-6 pb-2">
             <div>
-              <h2 className="font-black text-2xl text-nl-black">Vote for this week's vibe</h2>
+              <h2 className="font-black text-2xl text-nl-black">Pick your background music</h2>
               <p className="font-semibold text-sm uppercase tracking-widest text-nl-black/50 mt-4">
-                The song with the most votes will play in the background 🎶
+                Choose a song to listen to during the checkout 🎶
               </p>
             </div>
             <button onClick={onClose} className="text-nl-black/30 hover:text-nl-black text-2xl leading-none transition-colors">×</button>
@@ -83,7 +85,6 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
             <SongPicker
               songs={songs}
               selected={draft.song_choice ?? null}
-              votes={songVotes}
               onSelect={onSongChange}
             />
           </div>
@@ -91,7 +92,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
           <div className="flex items-center justify-between px-8 py-5 border-t border-nl-black/10">
             <button
               onClick={onBack}
-              className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors"
+              className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -100,7 +101,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
               disabled={!draft.song_choice}
               className={`font-bold text-sm px-8 py-3 rounded-xl transition-colors
                 ${draft.song_choice
-                  ? 'bg-nl-black text-nl-white hover:bg-nl-purple-dark'
+                  ? 'bg-nl-black text-nl-white hover:bg-nl-purple-dark cursor-pointer'
                   : 'bg-nl-black/10 text-nl-black/30 cursor-not-allowed'
                 }`}
             >
@@ -120,7 +121,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
     step === 1 ? draft.name.trim() !== '' && draft.emoji !== '' :
     step === 2 ? draft.mood !== null :
     photoUrl && step === 3 ? true :
-    step === 3 + p ? draft.wins.length > 0 || draft.learnings.length > 0 :
+    step === 3 + p ? (draft.wins.length > 0 || achievementsPending.wins) && (draft.learnings.length > 0 || achievementsPending.learnings) :
     step === 4 + p ? draft.funAnswer !== null :
     step === 5 + p ? draft.weekend.trim() !== '' :
     true
@@ -171,7 +172,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
             <WeekRecap photoUrl={photoUrl} />
           )}
           {step === 3 + p && (
-            <Achievements wins={draft.wins} learnings={draft.learnings} onChange={onAchievementsChange} />
+            <Achievements ref={achievementsRef} wins={draft.wins} learnings={draft.learnings} onChange={onAchievementsChange} onPendingChange={setAchievementsPending} />
           )}
           {step === 4 + p && (
             <FunQuestion selected={draft.funAnswer} onSelect={onFunAnswerChange} questionIndex={questionIndex} />
@@ -188,7 +189,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
         <div className="flex items-center justify-between px-8 py-5 border-t border-nl-black/10">
           <button
             onClick={onBack}
-            className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors"
+            className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors cursor-pointer"
           >
             {step === 1 ? '← Back' : '← Back'}
           </button>
@@ -198,7 +199,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
             disabled={!canProceed}
             className={`font-bold text-sm px-8 py-3 rounded-xl transition-colors
               ${canProceed
-                ? 'bg-nl-black text-nl-white hover:bg-nl-purple-dark'
+                ? 'bg-nl-black text-nl-white hover:bg-nl-purple-dark cursor-pointer'
                 : 'bg-nl-black/10 text-nl-black/30 cursor-not-allowed'
               }`}
           >

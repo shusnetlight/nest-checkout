@@ -8,12 +8,12 @@ export interface Submission extends Draft {
 }
 
 const COLORS = [
-  { bg: '#E8E4FF', border: '#6664F1' }, // purple
-  { bg: '#FFF9CC', border: '#EFD500' }, // yellow
-  { bg: '#C2F9FF', border: '#00AADF' }, // blue
-  { bg: '#FFD0FF', border: '#E166D5' }, // pink
-  { bg: '#C8FFFB', border: '#32DF19' }, // green
-  { bg: '#FFE4CC', border: '#FF8C00' }, // orange
+  { bg: '#E8E4FF', border: '#6664F1' },
+  { bg: '#FFF9CC', border: '#EFD500' },
+  { bg: '#C2F9FF', border: '#00AADF' },
+  { bg: '#FFD0FF', border: '#E166D5' },
+  { bg: '#C8FFFB', border: '#32DF19' },
+  { bg: '#FFE4CC', border: '#FF8C00' },
 ]
 
 export function colorOf(idx: number) {
@@ -47,9 +47,7 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
   return (
     <div className="flex flex-col gap-0">
       <div className="flex gap-3 items-stretch">
-
-        {/* Y-axis */}
-        <div className="flex flex-col items-center justify-between shrink-0 w-10 " style={{ height: BOARD }}>
+        <div className="flex flex-col items-center justify-between shrink-0 w-10" style={{ height: BOARD }}>
           <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight">HIGH<br/>ENERGY</span>
           <div className="flex flex-col items-center flex-1 justify-center gap-1 py-1">
             <span className="text-lg font-bold text-nl-black/50 leading-none">↑</span>
@@ -58,8 +56,6 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
           </div>
           <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight">LOW<br/>ENERGY</span>
         </div>
-
-        {/* Board */}
         <div className="relative rounded-xl overflow-hidden shrink-0" style={{ width: BOARD, height: BOARD }}>
           <div className="grid grid-cols-6 gap-px bg-white/40 w-full h-full">
             {GRID.map((row, rIdx) =>
@@ -92,8 +88,6 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
           ))}
         </div>
       </div>
-
-      {/* X-axis */}
       <div className="flex items-center gap-2 mt-2 pt-3" style={{ paddingLeft: 52 }}>
         <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Unpleasant</span>
         <div className="flex items-center flex-1 gap-1">
@@ -107,7 +101,114 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
   )
 }
 
-// ── A or B Card ───────────────────────────────────────────────────────────────
+// ── Team Canvas ───────────────────────────────────────────────────────────────
+
+const CANVAS_W = 360
+const CANVAS_H = 240
+
+const THUMB_W = 48
+const THUMB_H = 32
+
+function useCanvasDataUrl(submissions: Submission[], onlyIndex?: number) {
+  const [dataUrl, setDataUrl] = useState('')
+  useEffect(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = CANVAS_W
+    canvas.height = CANVAS_H
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
+    submissions.forEach((s, i) => {
+      if (onlyIndex !== undefined && onlyIndex !== i) return
+      if (s.drawing?.length) renderStrokes(ctx, s.drawing, CANVAS_W, CANVAS_H)
+    })
+    setDataUrl(canvas.toDataURL())
+  }, [submissions, onlyIndex]) // eslint-disable-line
+  return dataUrl
+}
+
+function Thumb({ label, dataUrl, isSelected, onClick }: {
+  label: string
+  dataUrl: string
+  isSelected: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 cursor-pointer shrink-0"
+    >
+      <div
+        className="rounded-md overflow-hidden border-2 transition-colors"
+        style={{
+          borderColor: isSelected ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)',
+          width: THUMB_W,
+          height: THUMB_H,
+        }}
+      >
+        <img src={dataUrl} style={{ width: THUMB_W, height: THUMB_H, display: 'block' }} />
+      </div>
+      <span className="text-[9px] font-bold uppercase tracking-widest text-nl-black/40">{label}</span>
+    </button>
+  )
+}
+
+function TeamCanvas({ submissions }: { submissions: Submission[] }) {
+  const [selected, setSelected] = useState<number | 'all'>('all')
+
+  useEffect(() => {
+    if (typeof selected === 'number' && selected >= submissions.length) setSelected('all')
+  }, [submissions.length]) // eslint-disable-line
+
+  const mainDataUrl = useCanvasDataUrl(submissions, selected === 'all' ? undefined : selected)
+  const allThumbUrl  = useCanvasDataUrl(submissions)
+
+  const withDrawings = submissions.filter(s => s.drawing?.length)
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="rounded-xl overflow-hidden border border-nl-black/10" style={{ width: CANVAS_W, height: CANVAS_H }}>
+        <img src={mainDataUrl} style={{ width: CANVAS_W, height: CANVAS_H, display: 'block' }} />
+      </div>
+
+      {withDrawings.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          <Thumb
+            label="All"
+            dataUrl={allThumbUrl}
+            isSelected={selected === 'all'}
+            onClick={() => setSelected('all')}
+          />
+          {submissions.map((s, i) => {
+            if (!s.drawing?.length) return null
+            return (
+              <IndividualThumb key={i} index={i} submissions={submissions} selected={selected} onSelect={setSelected} />
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function IndividualThumb({ index, submissions, selected, onSelect }: {
+  index: number
+  submissions: Submission[]
+  selected: number | 'all'
+  onSelect: (v: number | 'all') => void
+}) {
+  const dataUrl = useCanvasDataUrl(submissions, index)
+  return (
+    <Thumb
+      label={`${index + 1}`}
+      dataUrl={dataUrl}
+      isSelected={selected === index}
+      onClick={() => onSelect(selected === index ? 'all' : index)}
+    />
+  )
+}
+
+// ── Cards ─────────────────────────────────────────────────────────────────────
 
 function AOrBCard({ s }: { s: Submission }) {
   if (!s.funAnswer) return null
@@ -124,19 +225,14 @@ function AOrBCard({ s }: { s: Submission }) {
       {(['a', 'b'] as const).map(side => {
         const isChosen = answer === side
         return (
-          <div
-            key={side}
-            className="flex items-start gap-2"
-          >
+          <div key={side} className="flex items-start gap-2">
             <span
               className="font-black text-[10px] uppercase tracking-widest mt-0.5 shrink-0 w-3"
               style={{ color: isChosen ? c.border : '#00000033' }}
             >
               {side.toUpperCase()}
             </span>
-            <span
-              className={`text-sm leading-snug ${isChosen ? 'font-bold text-nl-black' : 'font-normal text-nl-black/30'}`}
-            >
+            <span className={`text-sm leading-snug ${isChosen ? 'font-bold text-nl-black' : 'font-normal text-nl-black/30'}`}>
               {side === 'a' ? a : b}
             </span>
           </div>
@@ -145,8 +241,6 @@ function AOrBCard({ s }: { s: Submission }) {
     </div>
   )
 }
-
-// ── Sticky Note ───────────────────────────────────────────────────────────────
 
 function StickyNote({ text, s }: { text: string; s: Submission }) {
   const c = colorOf(s.colorIdx)
@@ -160,39 +254,6 @@ function StickyNote({ text, s }: { text: string; s: Submission }) {
       </span>
       <span className="text-sm font-semibold text-nl-black leading-snug">{text}</span>
     </div>
-  )
-}
-
-// ── Team Canvas ───────────────────────────────────────────────────────────────
-
-const CANVAS_W = 360
-const CANVAS_H = 240
-
-function TeamCanvas({ submissions }: { submissions: Submission[] }) {
-  const [dataUrl, setDataUrl] = useState<string>('')
-
-  useEffect(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = CANVAS_W
-    canvas.height = CANVAS_H
-    const ctx = canvas.getContext('2d')!
-    ctx.fillStyle = '#FFFFFF'
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
-    for (const s of submissions) {
-      if (!s.drawing?.length) continue
-      renderStrokes(ctx, s.drawing, CANVAS_W, CANVAS_H)
-    }
-    setDataUrl(canvas.toDataURL())
-  }, [submissions])
-
-  return (
-    <img
-      src={dataUrl}
-      width={CANVAS_W}
-      height={CANVAS_H}
-      className="rounded-xl border border-nl-black/10"
-      style={{ width: CANVAS_W, height: CANVAS_H }}
-    />
   )
 }
 
@@ -210,8 +271,6 @@ function Column({ title, children }: { title: string; children: React.ReactNode 
     </div>
   )
 }
-
-// ── Person Header ─────────────────────────────────────────────────────────────
 
 function PersonTag({ s }: { s: Submission }) {
   const c = colorOf(s.colorIdx)
@@ -232,16 +291,23 @@ interface Props {
   submissions: Submission[]
   sessionId: string
   nestName: string
+  nestEmoji: string
   onAddPerson: () => void
   onRestart: () => void
 }
 
-export default function OverviewBoard({ submissions, sessionId, nestName, onAddPerson: _onAddPerson, onRestart }: Props) {
+export default function OverviewBoard({ submissions, sessionId, nestName, nestEmoji: _nestEmoji, onAddPerson: _onAddPerson, onRestart }: Props) {
   const toSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
   const boardRef = useRef<HTMLDivElement>(null)
+
+  // TODO: Reactions feature (work in progress)
+  // const reactorId = ...
+  // const [reactions, setReactions] = useState<ReactionsMap>({})
+  // const [ownReactions, setOwnReactions] = useState<Set<string>>(new Set())
+  // ...
 
   function copyLink() {
     navigator.clipboard.writeText(shareUrl)
@@ -275,10 +341,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, onAddP
           <h1 className="font-black text-3xl text-nl-black mt-0.5">Nest Checkout — Overview</h1>
         </div>
         <div className="flex gap-3 items-center">
-          <button
-            onClick={onRestart}
-            className="font-semibold text-xs text-nl-black/30 hover:text-nl-black/60 transition-colors"
-          >
+          <button onClick={onRestart} className="font-semibold text-xs text-nl-black/30 hover:text-nl-black/60 transition-colors">
             Restart
           </button>
           <button
@@ -297,31 +360,25 @@ export default function OverviewBoard({ submissions, sessionId, nestName, onAddP
         </div>
       </div>
 
-      {/* Participant chips */}
+      {/* Participants */}
       <div className="flex flex-wrap gap-2">
         {submissions.map((s, i) => <PersonTag key={i} s={s} />)}
       </div>
 
-      {/* Main content */}
+      {/* Main */}
       <div className="flex gap-10 items-start">
 
-        {/* Mood Board + Team Canvas */}
         <div className="shrink-0 flex flex-col gap-12">
           <div>
-            <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">
-              Mood Check
-            </h2>
+            <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Mood Check</h2>
             <MoodBoard submissions={submissions} />
           </div>
           <div>
-            <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">
-              Team Canvas
-            </h2>
+            <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Team Canvas</h2>
             <TeamCanvas submissions={submissions} />
           </div>
         </div>
 
-        {/* Cards */}
         <div className="flex gap-6 flex-1 min-w-0">
 
           <Column title="Achievements">

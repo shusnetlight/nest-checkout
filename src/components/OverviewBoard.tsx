@@ -483,6 +483,9 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
 
     flushSync(() => { setVisibleSubmissions(subs); setScreenshotting(true) })
 
+    // Wait for canvas useEffects to redraw after the submissions filter is applied
+    await new Promise(resolve => setTimeout(resolve, 200))
+
     try {
       const dataUrl = await toPng(boardRef.current, { pixelRatio: 2, backgroundColor: '#FFF0E6' })
       const link = document.createElement('a')

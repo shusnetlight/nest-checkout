@@ -15,6 +15,20 @@ export const ALL_SONGS: Song[] = [
   { id: 'feel-good-inc',  title: 'Feel Good Inc.',              artist: 'Gorillaz',       emoji: '🎮', ytId: 'HyHNuVaZJ-k' },
   { id: 'heat-waves',     title: 'Heat Waves',                  artist: 'Glass Animals',  emoji: '🌊', ytId: 'mRD0-GxqHVo' },
   { id: 'nightcall',      title: 'Nightcall',                   artist: 'Kavinsky',       emoji: '🚗', ytId: 'MV_3Dpw-BRY' },
+  { id: 'here-comes-sun', title: 'Here Comes The Sun',          artist: 'The Beatles',    emoji: '☀️', ytId: 'KQetemT1sWc' },
+  { id: 'wouldnt-nice',   title: "Wouldn't It Be Nice",         artist: 'The Beach Boys', emoji: '🌸', ytId: '5lP8BZcyoEQ' },
+  { id: 'espresso',       title: 'Espresso',                    artist: 'Sabrina Carpenter', emoji: '☕', ytId: 'eVli-tstM5E' },
+  { id: 'miles-away',     title: 'Miles Away',                  artist: 'Ofenbach',       emoji: '✈️', ytId: 'FUo-g8GW6Z8' },
+  { id: 'i-had-some-help',  title: 'I Had Some Help',             artist: 'Post Malone ft. Morgan Wallen', emoji: '🤠', ytId: '4QIZE708gJ4' },
+  { id: 'sunroof',          title: 'Sunroof',                     artist: 'Nicky Youre & dazy',           emoji: '🌞', ytId: 'G5xSLbYMr-I' },
+  { id: 'messy',            title: 'Messy',                       artist: 'Lola Young',                   emoji: '🌪️', ytId: 'AHI7JjJlpYo' },
+  { id: 'following-sun',    title: 'Following The Sun',           artist: 'SUPER-Hi x NEEKA',             emoji: '🌅', ytId: 'uZsY4S4ckMU' },
+  { id: 'i-run',            title: 'I RUN',                       artist: 'HAVEN.',                       emoji: '🏃', ytId: 'hTHmk4_HnV4' },
+  { id: 'black-friday',     title: 'Black Friday',                artist: 'Lost Frequencies & Tom Odell', emoji: '🖤', ytId: 'vRLQQJtKEbs' },
+  { id: 'reality',          title: 'Reality',                     artist: 'Lost Frequencies',             emoji: '🌊', ytId: '_uC_hmA64ns' },
+  { id: 'bella-ciao',       title: 'Bella Ciao (HUGEL Remix)',    artist: 'El Profesor',                  emoji: '🎭', ytId: 'jhgJV0Pg54Y' },
+  { id: 'ordinary',         title: 'Ordinary',                    artist: 'Alex Warren',                  emoji: '✨', ytId: 'u2ah9tWTkmk' },
+  { id: 'golden',           title: 'Golden',                      artist: 'KPop Demon Hunters',           emoji: '🌟', ytId: 'yebNIHKAC4A' },
 ]
 
 // Deterministic seeded shuffle — same sessionId always returns same 3 songs

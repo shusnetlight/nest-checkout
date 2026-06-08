@@ -456,7 +456,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
   const boardRef = useRef<HTMLDivElement>(null)
-  const { reactions, reactorId, toggle } = useReactions(sessionId)
+  // const { reactions, reactorId, toggle } = useReactions(sessionId)
 
   function copyLink() {
     navigator.clipboard.writeText(shareUrl)
@@ -533,9 +533,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
           <Column title="Achievements">
             {submissions.map((s, i) =>
               s.wins.map((w, j) => (
-                <ReactableCard key={`${i}-${j}`} cardKey={`${s.name}::${s.emoji}::win::${j}`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
-                  {footer => <StickyNote text={w} s={s} footer={footer} />}
-                </ReactableCard>
+                <StickyNote key={`${i}-${j}`} text={w} s={s} />
               ))
             )}
           </Column>
@@ -543,26 +541,20 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
           <Column title="Learnings">
             {submissions.map((s, i) =>
               s.learnings.map((l, j) => (
-                <ReactableCard key={`${i}-${j}`} cardKey={`${s.name}::${s.emoji}::learning::${j}`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
-                  {footer => <StickyNote text={l} s={s} footer={footer} />}
-                </ReactableCard>
+                <StickyNote key={`${i}-${j}`} text={l} s={s} />
               ))
             )}
           </Column>
 
           <Column title="Rather A or B?">
             {submissions.map((s, i) => s.funAnswer && (
-              <ReactableCard key={i} cardKey={`${s.name}::${s.emoji}::fun`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
-                {footer => <AOrBCard s={s} footer={footer} />}
-              </ReactableCard>
+              <AOrBCard key={i} s={s} />
             ))}
           </Column>
 
           <Column title="Weekend Plans">
             {submissions.map((s, i) => s.weekend && (
-              <ReactableCard key={i} cardKey={`${s.name}::${s.emoji}::weekend`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
-                {footer => <StickyNote text={s.weekend} s={s} footer={footer} />}
-              </ReactableCard>
+              <StickyNote key={i} text={s.weekend} s={s} />
             ))}
           </Column>
 

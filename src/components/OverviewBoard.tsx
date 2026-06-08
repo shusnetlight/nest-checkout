@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import { toPng } from 'html-to-image'
 import type { Draft } from '../App'
 import { renderStrokes } from './checkout/Drawing'
@@ -455,8 +456,12 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
+  const [screenshotMenu, setScreenshotMenu] = useState(false)
+  const [visibleSubmissions, setVisibleSubmissions] = useState(submissions)
   const boardRef = useRef<HTMLDivElement>(null)
   // const { reactions, reactorId, toggle } = useReactions(sessionId)
+
+  useEffect(() => { setVisibleSubmissions(submissions) }, [submissions])
 
   function copyLink() {
     navigator.clipboard.writeText(shareUrl)
@@ -464,9 +469,20 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
     setTimeout(() => setCopied(false), 2000)
   }
 
-  async function takeScreenshot() {
+  async function takeScreenshot(filter: 'all' | 'personal') {
     if (!boardRef.current) return
-    setScreenshotting(true)
+    setScreenshotMenu(false)
+
+    const subs = filter === 'personal'
+      ? (() => {
+          const name = localStorage.getItem('nest-user-name')
+          const emoji = localStorage.getItem('nest-user-emoji')
+          return name && emoji ? submissions.filter(s => s.name === name && s.emoji === emoji) : submissions
+        })()
+      : submissions
+
+    flushSync(() => { setVisibleSubmissions(subs); setScreenshotting(true) })
+
     try {
       const dataUrl = await toPng(boardRef.current, { pixelRatio: 2, backgroundColor: '#FFF0E6' })
       const link = document.createElement('a')
@@ -476,7 +492,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
       link.click()
       document.body.removeChild(link)
     } finally {
-      setScreenshotting(false)
+      flushSync(() => { setVisibleSubmissions(submissions); setScreenshotting(false) })
     }
   }
 
@@ -499,19 +515,40 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
           >
             {copied ? '✓ Copied!' : '🔗 Share link'}
           </button>
-          <button
-            onClick={takeScreenshot}
-            disabled={screenshotting}
-            className="font-bold text-sm px-6 py-2.5 rounded-xl bg-nl-black text-nl-white hover:bg-nl-purple-dark transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            {screenshotting ? 'Capturing...' : '📸 Take Screenshot'}
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setScreenshotMenu(v => !v)}
+              disabled={screenshotting}
+              className="font-bold text-sm px-6 py-2.5 rounded-xl bg-nl-black text-nl-white hover:bg-nl-purple-dark transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {screenshotting ? 'Capturing...' : '📸 Screenshot'}
+            </button>
+            {screenshotMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setScreenshotMenu(false)} />
+                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-lg border border-nl-black/10 overflow-hidden z-50 min-w-[160px]">
+                  <button
+                    onClick={() => takeScreenshot('all')}
+                    className="w-full text-left px-4 py-2.5 text-sm font-semibold text-nl-black hover:bg-nl-black/5 transition-colors cursor-pointer"
+                  >
+                    All entries
+                  </button>
+                  <button
+                    onClick={() => takeScreenshot('personal')}
+                    className="w-full text-left px-4 py-2.5 text-sm font-semibold text-nl-black hover:bg-nl-black/5 transition-colors cursor-pointer"
+                  >
+                    My entries
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Participants */}
       <div className="flex flex-wrap gap-2">
-        {submissions.map((s, i) => <PersonTag key={i} s={s} />)}
+        {visibleSubmissions.map((s, i) => <PersonTag key={i} s={s} />)}
       </div>
 
       {/* Main */}
@@ -520,18 +557,18 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
         <div className="shrink-0 flex flex-col gap-12">
           <div>
             <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Mood Check</h2>
-            <MoodBoard submissions={submissions} />
+            <MoodBoard submissions={visibleSubmissions} />
           </div>
           <div>
             <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Team Canvas</h2>
-            <TeamCanvas submissions={submissions} />
+            <TeamCanvas submissions={visibleSubmissions} />
           </div>
         </div>
 
         <div className="flex gap-6 flex-1 min-w-0">
 
           <Column title="Achievements">
-            {submissions.map((s, i) =>
+            {visibleSubmissions.map((s, i) =>
               s.wins.map((w, j) => (
                 <StickyNote key={`${i}-${j}`} text={w} s={s} />
               ))
@@ -539,7 +576,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
           </Column>
 
           <Column title="Learnings">
-            {submissions.map((s, i) =>
+            {visibleSubmissions.map((s, i) =>
               s.learnings.map((l, j) => (
                 <StickyNote key={`${i}-${j}`} text={l} s={s} />
               ))
@@ -547,13 +584,13 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
           </Column>
 
           <Column title="Rather A or B?">
-            {submissions.map((s, i) => s.funAnswer && (
+            {visibleSubmissions.map((s, i) => s.funAnswer && (
               <AOrBCard key={i} s={s} />
             ))}
           </Column>
 
           <Column title="Weekend Plans">
-            {submissions.map((s, i) => s.weekend && (
+            {visibleSubmissions.map((s, i) => s.weekend && (
               <StickyNote key={i} text={s.weekend} s={s} />
             ))}
           </Column>

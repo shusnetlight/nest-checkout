@@ -95,17 +95,14 @@ function App() {
     }, 500)
   }
 
-  const loadAndSubscribe = useCallback(async (sid: string) => {
-    const { data } = await supabase
-      .from('submissions')
-      .select('data')
-      .eq('session_id', sid)
-      .order('created_at', { ascending: true })
-
-    if (data) {
-      setSubmissions(data.map((row, i) => ({ ...row.data, colorIdx: i })))
+  const loadAndSubscribe = useCallback((sid: string) => {
+    // Remove any existing channel first (handles React Strict Mode double-invoke)
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
     }
 
+    // Create channel synchronously before any async work
     const channel = supabase
       .channel(`session-${sid}`)
       .on(
@@ -121,6 +118,16 @@ function App() {
       )
       .subscribe()
     channelRef.current = channel
+
+    // Load existing data (fire-and-forget)
+    supabase
+      .from('submissions')
+      .select('data')
+      .eq('session_id', sid)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        if (data) setSubmissions(data.map((row, i) => ({ ...row.data, colorIdx: i })))
+      })
   }, [])
 
   // On mount: check URL for session, nest and view
@@ -137,6 +144,12 @@ function App() {
       supabase.from('sessions').select('photo_url').eq('id', sid).single().then(({ data }) => {
         if (data?.photo_url) setSessionPhotoUrl(data.photo_url)
       })
+    }
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
   }, [loadAndSubscribe])
 

@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { toPng } from 'html-to-image'
 import type { Draft } from '../App'
 import { renderStrokes } from './checkout/Drawing'
+import { supabase } from '../lib/supabase'
 
 export interface Submission extends Draft {
   colorIdx: number
@@ -105,7 +106,6 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
 
 const CANVAS_W = 360
 const CANVAS_H = 240
-
 const THUMB_W = 48
 const THUMB_H = 32
 
@@ -128,23 +128,13 @@ function useCanvasDataUrl(submissions: Submission[], onlyIndex?: number) {
 }
 
 function Thumb({ label, dataUrl, isSelected, onClick }: {
-  label: string
-  dataUrl: string
-  isSelected: boolean
-  onClick: () => void
+  label: string; dataUrl: string; isSelected: boolean; onClick: () => void
 }) {
   return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-1 cursor-pointer shrink-0"
-    >
+    <button onClick={onClick} className="flex flex-col items-center gap-1 cursor-pointer shrink-0">
       <div
         className="rounded-md overflow-hidden border-2 transition-colors"
-        style={{
-          borderColor: isSelected ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)',
-          width: THUMB_W,
-          height: THUMB_H,
-        }}
+        style={{ borderColor: isSelected ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)', width: THUMB_W, height: THUMB_H }}
       >
         <img src={dataUrl} style={{ width: THUMB_W, height: THUMB_H, display: 'block' }} />
       </div>
@@ -153,49 +143,8 @@ function Thumb({ label, dataUrl, isSelected, onClick }: {
   )
 }
 
-function TeamCanvas({ submissions }: { submissions: Submission[] }) {
-  const [selected, setSelected] = useState<number | 'all'>('all')
-
-  useEffect(() => {
-    if (typeof selected === 'number' && selected >= submissions.length) setSelected('all')
-  }, [submissions.length]) // eslint-disable-line
-
-  const mainDataUrl = useCanvasDataUrl(submissions, selected === 'all' ? undefined : selected)
-  const allThumbUrl  = useCanvasDataUrl(submissions)
-
-  const withDrawings = submissions.filter(s => s.drawing?.length)
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="rounded-xl overflow-hidden border border-nl-black/10" style={{ width: CANVAS_W, height: CANVAS_H }}>
-        <img src={mainDataUrl} style={{ width: CANVAS_W, height: CANVAS_H, display: 'block' }} />
-      </div>
-
-      {withDrawings.length > 1 && (
-        <div className="flex gap-2 flex-wrap">
-          <Thumb
-            label="All"
-            dataUrl={allThumbUrl}
-            isSelected={selected === 'all'}
-            onClick={() => setSelected('all')}
-          />
-          {submissions.map((s, i) => {
-            if (!s.drawing?.length) return null
-            return (
-              <IndividualThumb key={i} index={i} submissions={submissions} selected={selected} onSelect={setSelected} />
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function IndividualThumb({ index, submissions, selected, onSelect }: {
-  index: number
-  submissions: Submission[]
-  selected: number | 'all'
-  onSelect: (v: number | 'all') => void
+  index: number; submissions: Submission[]; selected: number | 'all'; onSelect: (v: number | 'all') => void
 }) {
   const dataUrl = useCanvasDataUrl(submissions, index)
   return (
@@ -208,9 +157,199 @@ function IndividualThumb({ index, submissions, selected, onSelect }: {
   )
 }
 
+function TeamCanvas({ submissions }: { submissions: Submission[] }) {
+  const [selected, setSelected] = useState<number | 'all'>('all')
+
+  useEffect(() => {
+    if (typeof selected === 'number' && selected >= submissions.length) setSelected('all')
+  }, [submissions.length]) // eslint-disable-line
+
+  const mainDataUrl = useCanvasDataUrl(submissions, selected === 'all' ? undefined : selected)
+  const allThumbUrl  = useCanvasDataUrl(submissions)
+  const withDrawings = submissions.filter(s => s.drawing?.length)
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="rounded-xl overflow-hidden border border-nl-black/10" style={{ width: CANVAS_W, height: CANVAS_H }}>
+        <img src={mainDataUrl} style={{ width: CANVAS_W, height: CANVAS_H, display: 'block' }} />
+      </div>
+      {withDrawings.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          <Thumb label="All" dataUrl={allThumbUrl} isSelected={selected === 'all'} onClick={() => setSelected('all')} />
+          {submissions.map((s, i) => {
+            if (!s.drawing?.length) return null
+            return <IndividualThumb key={i} index={i} submissions={submissions} selected={selected} onSelect={setSelected} />
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+
+type ReactionType = 'thumbsup' | 'heart' | 'nest'
+type ReactionsMap = Record<string, string[]> // `${cardKey}__${type}` → reactorId[]
+
+function getReactorId() {
+  let id = localStorage.getItem('nest-reactor-id')
+  if (!id) { id = Math.random().toString(36).slice(2, 12); localStorage.setItem('nest-reactor-id', id) }
+  return id
+}
+
+function useReactions(sessionId: string) {
+  const reactorId = useRef(getReactorId())
+  const [reactions, setReactions] = useState<ReactionsMap>({})
+  const reactionsRef = useRef(reactions)
+  reactionsRef.current = reactions
+
+  useEffect(() => {
+    supabase
+      .from('reactions')
+      .select('submission_key, reactor_id, type')
+      .eq('session_id', sessionId)
+      .then(({ data, error }) => {
+        if (error) { console.error('[reactions] load error:', error); return }
+        if (!data) return
+        const map: ReactionsMap = {}
+        for (const row of data) {
+          const k = `${row.submission_key}__${row.type}`
+          map[k] = [...(map[k] ?? []), row.reactor_id]
+        }
+        setReactions(map)
+      })
+
+    const channel = supabase
+      .channel(`reactions-${sessionId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
+        if (payload.new.reactor_id === reactorId.current) return
+        const k = `${payload.new.submission_key}__${payload.new.type}`
+        setReactions(prev => ({ ...prev, [k]: [...(prev[k] ?? []), payload.new.reactor_id] }))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
+        if (payload.old.reactor_id === reactorId.current) return
+        const k = `${payload.old.submission_key}__${payload.old.type}`
+        setReactions(prev => ({ ...prev, [k]: (prev[k] ?? []).filter(id => id !== payload.old.reactor_id) }))
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [sessionId])
+
+  const toggle = useCallback(async (cardKey: string, type: ReactionType) => {
+    const k = `${cardKey}__${type}`
+    const hasReacted = reactionsRef.current[k]?.includes(reactorId.current) ?? false
+
+    setReactions(prev => ({
+      ...prev,
+      [k]: hasReacted
+        ? (prev[k] ?? []).filter(id => id !== reactorId.current)
+        : [...(prev[k] ?? []), reactorId.current],
+    }))
+
+    if (hasReacted) {
+      const { error } = await supabase.from('reactions').delete()
+        .eq('session_id', sessionId)
+        .eq('submission_key', cardKey)
+        .eq('reactor_id', reactorId.current)
+        .eq('type', type)
+      if (error) console.error('[reactions] delete error:', error)
+    } else {
+      const { error } = await supabase.from('reactions').insert({
+        session_id: sessionId,
+        submission_key: cardKey,
+        reactor_id: reactorId.current,
+        type,
+      })
+      if (error) console.error('[reactions] insert error:', error)
+    }
+  }, [sessionId])
+
+  return { reactions, reactorId: reactorId.current, toggle }
+}
+
+// ── Reactable Card Wrapper ────────────────────────────────────────────────────
+
+function NestEmojiIcon({ emoji, size = 20 }: { emoji: string; size?: number }) {
+  if (emoji.startsWith('/'))
+    return <img src={emoji} style={{ width: size, height: size }} className="object-contain" />
+  return <span style={{ fontSize: size, lineHeight: 1 }}>{emoji}</span>
+}
+
+function ReactableCard({ cardKey, reactions, reactorId, nestEmoji, onToggle, children }: {
+  cardKey: string
+  reactions: ReactionsMap
+  reactorId: string
+  nestEmoji: string
+  onToggle: (cardKey: string, type: ReactionType) => void
+  children: (badges: React.ReactNode) => React.ReactNode
+}) {
+  const [hovering, setHovering] = useState(false)
+
+  const types: { type: ReactionType; emoji: string }[] = [
+    { type: 'thumbsup', emoji: '👍' },
+    { type: 'heart',    emoji: '❤️' },
+    { type: 'nest',     emoji: nestEmoji },
+  ]
+
+  const activeTypes = types.filter(t => (reactions[`${cardKey}__${t.type}`]?.length ?? 0) > 0)
+
+  const badges = activeTypes.length > 0 ? (
+    <div className="flex gap-1 mt-2 flex-wrap">
+      {activeTypes.map(({ type, emoji }) => {
+        const count = reactions[`${cardKey}__${type}`]?.length ?? 0
+        const hasOwn = reactions[`${cardKey}__${type}`]?.includes(reactorId) ?? false
+        return (
+          <button
+            key={type}
+            onClick={e => { e.stopPropagation(); onToggle(cardKey, type) }}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer
+              ${hasOwn
+                ? 'bg-white/60 border-nl-black/25 text-nl-black'
+                : 'bg-white/30 border-nl-black/15 text-nl-black/50 hover:border-nl-black/30'
+              }`}
+          >
+            <NestEmojiIcon emoji={emoji} size={13} />
+            <span>{count}</span>
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
+      {/* Hover toolbar */}
+      {hovering && (
+        <div className="absolute -top-10 right-0 z-20 flex items-center gap-0.5 bg-white rounded-2xl shadow-lg border border-nl-black/10 px-2 py-1.5">
+          {types.map(({ type, emoji }) => {
+            const hasOwn = reactions[`${cardKey}__${type}`]?.includes(reactorId) ?? false
+            return (
+              <button
+                key={type}
+                onClick={e => { e.stopPropagation(); onToggle(cardKey, type) }}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all cursor-pointer
+                  ${hasOwn ? 'bg-nl-purple/15 scale-110' : 'hover:bg-nl-black/6 hover:scale-110'}`}
+              >
+                <NestEmojiIcon emoji={emoji} size={18} />
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {children(badges)}
+    </div>
+  )
+}
+
 // ── Cards ─────────────────────────────────────────────────────────────────────
 
-function AOrBCard({ s }: { s: Submission }) {
+function AOrBCard({ s, footer }: { s: Submission; footer?: React.ReactNode }) {
   if (!s.funAnswer) return null
   const c = colorOf(s.colorIdx)
   const { a, b, answer } = s.funAnswer
@@ -238,11 +377,12 @@ function AOrBCard({ s }: { s: Submission }) {
           </div>
         )
       })}
+      {footer}
     </div>
   )
 }
 
-function StickyNote({ text, s }: { text: string; s: Submission }) {
+function StickyNote({ text, s, footer }: { text: string; s: Submission; footer?: React.ReactNode }) {
   const c = colorOf(s.colorIdx)
   return (
     <div
@@ -253,6 +393,7 @@ function StickyNote({ text, s }: { text: string; s: Submission }) {
         {s.emoji} {s.name}
       </span>
       <span className="text-sm font-semibold text-nl-black leading-snug">{text}</span>
+      {footer}
     </div>
   )
 }
@@ -296,18 +437,13 @@ interface Props {
   onRestart: () => void
 }
 
-export default function OverviewBoard({ submissions, sessionId, nestName, nestEmoji: _nestEmoji, onAddPerson: _onAddPerson, onRestart }: Props) {
+export default function OverviewBoard({ submissions, sessionId, nestName, nestEmoji, onAddPerson: _onAddPerson, onRestart }: Props) {
   const toSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
   const boardRef = useRef<HTMLDivElement>(null)
-
-  // TODO: Reactions feature (work in progress)
-  // const reactorId = ...
-  // const [reactions, setReactions] = useState<ReactionsMap>({})
-  // const [ownReactions, setOwnReactions] = useState<Set<string>>(new Set())
-  // ...
+  const { reactions, reactorId, toggle } = useReactions(sessionId)
 
   function copyLink() {
     navigator.clipboard.writeText(shareUrl)
@@ -341,19 +477,19 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
           <h1 className="font-black text-3xl text-nl-black mt-0.5">Nest Checkout — Overview</h1>
         </div>
         <div className="flex gap-3 items-center">
-          <button onClick={onRestart} className="font-semibold text-xs text-nl-black/30 hover:text-nl-black/60 transition-colors">
+          <button onClick={onRestart} className="font-semibold text-xs text-nl-black/30 hover:text-nl-black/60 transition-colors cursor-pointer">
             Restart
           </button>
           <button
             onClick={copyLink}
-            className="font-semibold text-sm px-4 py-2.5 rounded-xl border border-nl-black/20 text-nl-black/60 hover:text-nl-black hover:border-nl-black/40 transition-colors"
+            className="font-semibold text-sm px-4 py-2.5 rounded-xl border border-nl-black/20 text-nl-black/60 hover:text-nl-black hover:border-nl-black/40 transition-colors cursor-pointer"
           >
             {copied ? '✓ Copied!' : '🔗 Share link'}
           </button>
           <button
             onClick={takeScreenshot}
             disabled={screenshotting}
-            className="font-bold text-sm px-6 py-2.5 rounded-xl bg-nl-black text-nl-white hover:bg-nl-purple-dark transition-colors disabled:opacity-50"
+            className="font-bold text-sm px-6 py-2.5 rounded-xl bg-nl-black text-nl-white hover:bg-nl-purple-dark transition-colors disabled:opacity-50 cursor-pointer"
           >
             {screenshotting ? 'Capturing...' : '📸 Take Screenshot'}
           </button>
@@ -383,25 +519,37 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
 
           <Column title="Achievements">
             {submissions.map((s, i) =>
-              s.wins.map((w, j) => <StickyNote key={`${i}-${j}`} text={w} s={s} />)
+              s.wins.map((w, j) => (
+                <ReactableCard key={`${i}-${j}`} cardKey={`${s.name}::${s.emoji}::win::${j}`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
+                  {footer => <StickyNote text={w} s={s} footer={footer} />}
+                </ReactableCard>
+              ))
             )}
           </Column>
 
           <Column title="Learnings">
             {submissions.map((s, i) =>
-              s.learnings.map((l, j) => <StickyNote key={`${i}-${j}`} text={l} s={s} />)
+              s.learnings.map((l, j) => (
+                <ReactableCard key={`${i}-${j}`} cardKey={`${s.name}::${s.emoji}::learning::${j}`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
+                  {footer => <StickyNote text={l} s={s} footer={footer} />}
+                </ReactableCard>
+              ))
             )}
           </Column>
 
           <Column title="Rather A or B?">
             {submissions.map((s, i) => s.funAnswer && (
-              <AOrBCard key={i} s={s} />
+              <ReactableCard key={i} cardKey={`${s.name}::${s.emoji}::fun`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
+                {footer => <AOrBCard s={s} footer={footer} />}
+              </ReactableCard>
             ))}
           </Column>
 
           <Column title="Weekend Plans">
             {submissions.map((s, i) => s.weekend && (
-              <StickyNote key={i} text={s.weekend} s={s} />
+              <ReactableCard key={i} cardKey={`${s.name}::${s.emoji}::weekend`} reactions={reactions} reactorId={reactorId} nestEmoji={nestEmoji} onToggle={toggle}>
+                {footer => <StickyNote text={s.weekend} s={s} footer={footer} />}
+              </ReactableCard>
             ))}
           </Column>
 

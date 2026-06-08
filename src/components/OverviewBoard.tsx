@@ -201,9 +201,31 @@ function useReactions(sessionId: string) {
   const reactorId = useRef(getReactorId())
   const [reactions, setReactions] = useState<ReactionsMap>({})
   const reactionsRef = useRef(reactions)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   reactionsRef.current = reactions
 
   useEffect(() => {
+    // Remove any existing channel first (handles React Strict Mode double-invoke)
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
+    const channel = supabase
+      .channel(`reactions-${sessionId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
+        if (payload.new.reactor_id === reactorId.current) return
+        const k = `${payload.new.submission_key}__${payload.new.type}`
+        setReactions(prev => ({ ...prev, [k]: [...(prev[k] ?? []), payload.new.reactor_id] }))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
+        if (payload.old.reactor_id === reactorId.current) return
+        const k = `${payload.old.submission_key}__${payload.old.type}`
+        setReactions(prev => ({ ...prev, [k]: (prev[k] ?? []).filter(id => id !== payload.old.reactor_id) }))
+      })
+      .subscribe()
+    channelRef.current = channel
+
     supabase
       .from('reactions')
       .select('submission_key, reactor_id, type')
@@ -219,21 +241,12 @@ function useReactions(sessionId: string) {
         setReactions(map)
       })
 
-    const channel = supabase
-      .channel(`reactions-${sessionId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
-        if (payload.new.reactor_id === reactorId.current) return
-        const k = `${payload.new.submission_key}__${payload.new.type}`
-        setReactions(prev => ({ ...prev, [k]: [...(prev[k] ?? []), payload.new.reactor_id] }))
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
-        if (payload.old.reactor_id === reactorId.current) return
-        const k = `${payload.old.submission_key}__${payload.old.type}`
-        setReactions(prev => ({ ...prev, [k]: (prev[k] ?? []).filter(id => id !== payload.old.reactor_id) }))
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
+    }
   }, [sessionId])
 
   const toggle = useCallback(async (cardKey: string, type: ReactionType) => {

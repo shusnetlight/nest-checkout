@@ -197,15 +197,15 @@ function App() {
       )}
 
       {page === 'welcome' && sessionId && (
-        <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+        <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-6 sm:px-8">
           <NestBackground emojis={backgroundEmojis} />
           <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
             {nestEmoji.startsWith('/') ? <img src={nestEmoji} className="inline-block w-5 h-5 object-contain align-middle mr-1" /> : nestEmoji} {nestName ?? 'Nest Checkout'}
           </p>
-          <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-6">
+          <h1 className="font-black text-4xl sm:text-6xl text-nl-black text-center leading-tight mb-6">
             Welcome to the<br />Nest Checkout!
           </h1>
-          <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-12">
+          <p className="font-normal text-base sm:text-lg text-nl-black/70 text-center max-w-lg mb-10 sm:mb-12">
             A weekly space to reflect, celebrate wins, and connect.<br />Ready to check in?
           </p>
           <button
@@ -251,37 +251,43 @@ function App() {
       )}
 
       {page === 'welcome' && !sessionId && (
-        <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+        <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-6 sm:px-8 py-12">
           <NestBackground emojis={backgroundEmojis} />
           <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
             Nest Checkout
           </p>
-          <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-4">
+          <h1 className="font-black text-4xl sm:text-6xl text-nl-black text-center leading-tight mb-4">
             Hey Coach! 👋
           </h1>
-          <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-14">
-            Time for the weekly Nest Checkout — pick your Nest below<br />to kick things off and share the link with your team.
+          <p className="font-normal text-base sm:text-lg text-nl-black/70 text-center max-w-lg mb-10 sm:mb-14">
+            Time for the weekly Nest Checkout — pick your Nest below<br className="hidden sm:block" />to kick things off and share the link with your team.
           </p>
-          <div className="flex gap-5">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full sm:w-auto max-w-sm sm:max-w-none">
             {NESTS.map(nest => (
               <motion.button
                 key={nest.name}
                 onClick={() => createSession(nest.name)}
                 onMouseEnter={() => setHoveredNest(nest.name)}
                 onMouseLeave={() => setHoveredNest(null)}
-                className="group relative flex flex-col items-center gap-3 w-52 px-6 pt-8 pb-6 rounded-3xl border-2 border-nl-black/10 bg-nl-white hover:border-nl-purple hover:shadow-lg cursor-pointer transition-colors duration-200 text-left"
+                className="group relative flex flex-row sm:flex-col items-center gap-4 sm:gap-3 sm:w-52 px-5 sm:px-6 py-4 sm:pt-8 sm:pb-6 rounded-2xl sm:rounded-3xl border-2 border-nl-black/10 bg-nl-white hover:border-nl-purple hover:shadow-lg cursor-pointer transition-colors duration-200 text-left"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.99 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 style={{ willChange: 'transform' }}
               >
                 {nest.emoji.startsWith('/')
-                  ? <img src={nest.emoji} className="w-16 h-16 object-contain" />
-                  : <span className="text-6xl leading-none">{nest.emoji}</span>
+                  ? <img src={nest.emoji} className="w-12 h-12 sm:w-16 sm:h-16 object-contain shrink-0" />
+                  : <span className="text-5xl sm:text-6xl leading-none shrink-0">{nest.emoji}</span>
                 }
-                <span className="font-black text-base text-nl-black text-center">{nest.name}</span>
-                <div className="text-xs font-bold uppercase tracking-widest transition-colors text-nl-black/20 group-hover:text-nl-purple">
+                <div className="flex flex-col gap-0.5 sm:items-center flex-1 sm:flex-none">
+                  <span className="font-black text-base text-nl-black sm:text-center">{nest.name}</span>
+                  <span className="text-xs text-nl-black/40 sm:hidden">{nest.tagline}</span>
+                </div>
+                <div className="text-xs font-bold uppercase tracking-widest transition-colors text-nl-black/20 group-hover:text-nl-purple hidden sm:block">
                   Create session →
+                </div>
+                <div className="ml-auto sm:hidden text-nl-black/20 group-hover:text-nl-purple text-sm font-bold transition-colors">
+                  →
                 </div>
               </motion.button>
             ))}

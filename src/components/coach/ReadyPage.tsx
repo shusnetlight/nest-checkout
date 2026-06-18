@@ -22,11 +22,11 @@ export default function ReadyPage({ sessionId, nestName, nestEmoji, onStart, onN
   }
 
   return (
-    <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+    <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-6 sm:px-8 py-10">
       <NestBackground emojis={[nestEmoji]} />
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-12">
+      <div className="flex items-center gap-2 mb-8 sm:mb-12 flex-wrap justify-center">
         {['Select Nest', 'Add Photo', 'Share & Start'].map((label, i) => (
           <div key={i} className="flex items-center gap-2">
             {i < 2 ? (
@@ -51,11 +51,11 @@ export default function ReadyPage({ sessionId, nestName, nestEmoji, onStart, onN
         {nestEmoji.startsWith('/') ? <img src={nestEmoji} className="inline-block w-5 h-5 object-contain align-middle mr-1" /> : nestEmoji} {nestName}
       </p>
 
-      <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-4">
+      <h1 className="font-black text-4xl sm:text-6xl text-nl-black text-center leading-tight mb-4">
         You're all set! 🎉
       </h1>
 
-      <p className="font-normal text-lg text-nl-black/70 text-center max-w-lg mb-12">
+      <p className="font-normal text-base sm:text-lg text-nl-black/70 text-center max-w-lg mb-8 sm:mb-12">
         Share the link below with your team — they'll land on the welcome screen
         and can jump straight into the checkout.
       </p>

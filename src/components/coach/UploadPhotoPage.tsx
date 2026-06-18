@@ -51,11 +51,11 @@ export default function UploadPhotoPage({ sessionId, nestName, nestEmoji, onDone
   }
 
   return (
-    <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-8">
+    <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-6 sm:px-8 py-10">
       <NestBackground emojis={[nestEmoji]} />
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-12">
+      <div className="flex items-center gap-2 mb-8 sm:mb-12 flex-wrap justify-center">
         {['Select Nest', 'Add Photo', 'Share & Start'].map((label, i) => (
           <div key={i} className="flex items-center gap-2">
             {i === 0 ? (
@@ -82,11 +82,11 @@ export default function UploadPhotoPage({ sessionId, nestName, nestEmoji, onDone
         {nestEmoji.startsWith('/') ? <img src={nestEmoji} className="inline-block w-5 h-5 object-contain align-middle mr-1" /> : nestEmoji} {nestName}
       </p>
 
-      <h1 className="font-black text-6xl text-nl-black text-center leading-tight mb-4">
+      <h1 className="font-black text-4xl sm:text-6xl text-nl-black text-center leading-tight mb-4">
         Check-in Snapshot
       </h1>
 
-      <p className="font-normal text-lg text-nl-black/70 text-center max-w-xl mb-10">
+      <p className="font-normal text-base sm:text-lg text-nl-black/70 text-center max-w-xl mb-8 sm:mb-10">
         Got a photo of what your Nest planned during the week's check-in?<br />
         Your team will get a moment to reflect on it during the checkout.
       </p>

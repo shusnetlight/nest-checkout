@@ -75,95 +75,92 @@ export default function MoodMeter({ emoji, name, selected, onSelect, others = []
     ...(selected ? [{ emoji, name, x: selected.x, y: selected.y }] : []),
   ]
 
-  const BOARD_SIZE = 420
-
   return (
-    <div className="flex flex-col gap-3 animate-fade-up items-start">
+    <div className="flex flex-col gap-3 animate-fade-up w-full">
 
       <label className="font-semibold text-sm uppercase tracking-widest text-nl-black/50 pb-3">
-        How are you feeling? Click to place yourself.
+        How are you feeling? Tap to place yourself.
       </label>
 
-      <div
-        className="grid gap-x-3 gap-y-2 pr-2 pb-2"
-        style={{ gridTemplateColumns: `auto ${BOARD_SIZE}px`, width: 'fit-content' }}
-      >
-        {/* Y-axis — width follows label text */}
-        <div
-          className="flex flex-col items-center justify-between shrink-0 w-fit"
-          style={{ height: BOARD_SIZE }}
-        >
-          <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight whitespace-nowrap">HIGH<br/>ENERGY</span>
+      <div className="flex gap-2 sm:gap-3 w-full">
+        {/* Y-axis */}
+        <div className="flex flex-col items-center justify-between shrink-0 w-8 sm:w-10 self-stretch">
+          <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight whitespace-nowrap">HIGH<br/>ENERGY</span>
           <div className="flex flex-col items-center flex-1 justify-center gap-1 py-1 min-h-0 w-full">
-            <span className="text-lg font-bold text-nl-black/50 leading-none">↑</span>
+            <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">↑</span>
             <div className="flex-1 w-px bg-nl-black/30 min-h-0" />
-            <span className="text-lg font-bold text-nl-black/50 leading-none">↓</span>
+            <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">↓</span>
           </div>
-          <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight whitespace-nowrap">LOW<br/>ENERGY</span>
+          <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight whitespace-nowrap">LOW<br/>ENERGY</span>
         </div>
 
-        {/* Board */}
-        <div
-          ref={boardRef}
-          className="relative cursor-none select-none rounded-xl overflow-hidden shrink-0"
-          style={{ width: BOARD_SIZE, height: BOARD_SIZE }}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={() => setCursor(null)}
-          onClick={handleClick}
-        >
-          {/* Grid background */}
-          <div className="grid grid-cols-6 gap-px bg-white/40 w-full h-full">
-            {GRID.map((row, rIdx) =>
-              row.map((label, cIdx) => (
-                <div
-                  key={`${rIdx}-${cIdx}`}
-                  style={{ backgroundColor: cellColor(rIdx, cIdx) }}
-                  className="flex items-center justify-center"
-                >
-                  <span className="text-[9px] font-bold text-nl-black/70 text-center leading-tight select-none px-0.5">
-                    {label}
-                  </span>
+        <div className="flex flex-col gap-2 flex-1 min-w-0">
+          {/* Board — fills available width, square via aspect-ratio */}
+          <div
+            ref={boardRef}
+            className="relative cursor-crosshair select-none rounded-xl overflow-hidden w-full"
+            style={{ aspectRatio: '1 / 1' }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setCursor(null)}
+            onClick={handleClick}
+            onTouchStart={e => {
+              const touch = e.touches[0]
+              const rect = boardRef.current!.getBoundingClientRect()
+              const xPct = ((touch.clientX - rect.left) / rect.width) * 100
+              const yPct = ((touch.clientY - rect.top) / rect.height) * 100
+              onSelect({ x: xPct, y: yPct, label: labelAt(xPct, yPct) })
+            }}
+          >
+            <div className="grid grid-cols-6 gap-px bg-white/40 w-full h-full">
+              {GRID.map((row, rIdx) =>
+                row.map((label, cIdx) => (
+                  <div
+                    key={`${rIdx}-${cIdx}`}
+                    style={{ backgroundColor: cellColor(rIdx, cIdx) }}
+                    className="flex items-center justify-center"
+                  >
+                    <span className="text-[7px] sm:text-[9px] font-bold text-nl-black/70 text-center leading-tight select-none px-0.5">
+                      {label}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {allPlaced.map((p, i) => (
+              <div
+                key={i}
+                className="absolute pointer-events-none z-10 -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white shadow-md flex items-center justify-center text-sm sm:text-base border-2 border-nl-purple">
+                  {p.emoji}
                 </div>
-              ))
+              </div>
+            ))}
+
+            {cursor && (
+              <div
+                className="absolute pointer-events-none z-20 -translate-x-1/2 -translate-y-1/2 transition-none"
+                style={{ left: cursor.x, top: cursor.y }}
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/80 shadow-lg flex items-center justify-center text-sm sm:text-base border-2 border-nl-purple/50 opacity-80">
+                  {emoji}
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Placed emojis */}
-          {allPlaced.map((p, i) => (
-            <div
-              key={i}
-              className="absolute pointer-events-none z-10 -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${p.x}%`, top: `${p.y}%` }}
-            >
-              <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-base border-2 border-nl-purple">
-                {p.emoji}
-              </div>
+          {/* X-axis */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Unpleasant</span>
+            <div className="flex items-center flex-1 gap-1">
+              <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">←</span>
+              <div className="flex-1 h-px bg-nl-black/30" />
+              <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">→</span>
             </div>
-          ))}
-
-          {/* Custom emoji cursor */}
-          {cursor && (
-            <div
-              className="absolute pointer-events-none z-20 -translate-x-1/2 -translate-y-1/2 transition-none"
-              style={{ left: cursor.x, top: cursor.y }}
-            >
-              <div className="w-8 h-8 rounded-full bg-white/80 shadow-lg flex items-center justify-center text-base border-2 border-nl-purple/50 opacity-80">
-                {emoji}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* X-axis — second column, aligned with board */}
-        <div />
-        <div className="flex items-center gap-2 pt-3" style={{ width: BOARD_SIZE }}>
-          <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Unpleasant</span>
-          <div className="flex items-center flex-1 gap-1">
-            <span className="text-lg font-bold text-nl-black/50 leading-none">←</span>
-            <div className="flex-1 h-px bg-nl-black/30" />
-            <span className="text-lg font-bold text-nl-black/50 leading-none">→</span>
+            <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Pleasant</span>
           </div>
-          <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Pleasant</span>
         </div>
       </div>
 

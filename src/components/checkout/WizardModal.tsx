@@ -58,9 +58,9 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
   if (step === 0) {
     return (
       <div className="fixed inset-0 bg-nl-beige/90 backdrop-blur-sm flex items-center justify-center z-50 px-4 py-6">
-        <div className="bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up w-full max-w-lg">
+        <div className="bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up w-full max-w-lg max-h-[90dvh]">
 
-          <div className="flex items-center justify-between px-8 pt-6 pb-2">
+          <div className="flex items-center justify-between px-4 sm:px-8 pt-6 pb-2 shrink-0">
             <div>
               <h2 className="font-black text-2xl text-nl-black">Pick your background music</h2>
               <p className="font-semibold text-sm uppercase tracking-widest text-nl-black/50 mt-4">
@@ -70,7 +70,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
             <button onClick={onClose} className="text-nl-black/30 hover:text-nl-black text-2xl leading-none transition-colors">×</button>
           </div>
 
-          <div className="px-8 py-4 pb-8">
+          <div className="px-4 sm:px-8 py-4 pb-8 overflow-y-auto flex-1">
             <SongPicker
               songs={songs}
               selected={draft.song_choice ?? null}
@@ -78,7 +78,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
             />
           </div>
 
-          <div className="flex items-center justify-between px-8 py-5 border-t border-nl-black/10">
+          <div className="flex items-center justify-between px-4 sm:px-8 py-5 border-t border-nl-black/10 shrink-0">
             <button
               onClick={onBack}
               className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors cursor-pointer"
@@ -115,16 +115,12 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
     step === 5 + p ? draft.weekend.trim() !== '' :
     true
 
-  const isMoodStep = step === 2
-
   return (
     <div className="fixed inset-0 bg-nl-beige/90 backdrop-blur-sm flex items-center justify-center z-50 px-4 py-6">
-      <div className={`bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up
-        ${isMoodStep ? 'w-fit' : 'w-full max-w-lg'}`}
-      >
+      <div className="bg-nl-white flex flex-col shadow-xl rounded-2xl overflow-hidden animate-fade-up w-full max-w-lg max-h-[90dvh]">
 
         {/* Progress bar */}
-        <div className="h-1 bg-nl-black/10 w-full">
+        <div className="h-1 bg-nl-black/10 w-full shrink-0">
           <div
             className="h-full bg-nl-purple transition-all duration-500"
             style={{ width: `${progress}%` }}
@@ -132,7 +128,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-8 pt-6 pb-2">
+        <div className="flex items-center justify-between px-4 sm:px-8 pt-6 pb-2 shrink-0">
           <div>
             <p className="font-semibold text-xs uppercase tracking-widest text-nl-black/40">
               Step {step} of {STEPS.length}
@@ -150,7 +146,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
         </div>
 
         {/* Step content */}
-        <div className="px-8 py-6 overflow-y-auto">
+        <div className="px-4 sm:px-8 py-6 overflow-y-auto flex-1">
           {step === 1 && (
             <Identity name={draft.name} emoji={draft.emoji} onChange={onDraftChange} />
           )}
@@ -175,7 +171,7 @@ export default function WizardModal({ step, draft, questionIndex, photoUrl, song
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between px-8 py-5 border-t border-nl-black/10">
+        <div className="flex items-center justify-between px-4 sm:px-8 py-5 border-t border-nl-black/10 shrink-0">
           <button
             onClick={onBack}
             className="font-semibold text-sm text-nl-black/40 hover:text-nl-black transition-colors cursor-pointer"

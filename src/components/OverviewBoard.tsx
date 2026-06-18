@@ -42,22 +42,22 @@ function cellColor(row: number, col: number): string {
   return ['#C8FFFB', '#77FFF8', '#32DF19'][d]
 }
 
-const BOARD = 360
-
 function MoodBoard({ submissions }: { submissions: Submission[] }) {
   return (
-    <div className="flex flex-col gap-0">
-      <div className="flex gap-3 items-stretch">
-        <div className="flex flex-col items-center justify-between shrink-0 w-10" style={{ height: BOARD }}>
-          <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight">HIGH<br/>ENERGY</span>
+    <div className="flex flex-col gap-0 w-full">
+      <div className="flex gap-2 sm:gap-3 items-stretch w-full">
+        {/* Y-axis */}
+        <div className="flex flex-col items-center justify-between shrink-0 w-8 sm:w-10 self-stretch">
+          <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight">HIGH<br/>ENERGY</span>
           <div className="flex flex-col items-center flex-1 justify-center gap-1 py-1">
-            <span className="text-lg font-bold text-nl-black/50 leading-none">↑</span>
+            <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">↑</span>
             <div className="flex-1 w-px bg-nl-black/30" />
-            <span className="text-lg font-bold text-nl-black/50 leading-none">↓</span>
+            <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">↓</span>
           </div>
-          <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight">LOW<br/>ENERGY</span>
+          <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 text-center leading-tight">LOW<br/>ENERGY</span>
         </div>
-        <div className="relative rounded-xl overflow-hidden shrink-0" style={{ width: BOARD, height: BOARD }}>
+        {/* Board — fluid width, square via aspect-ratio */}
+        <div className="relative rounded-xl overflow-hidden flex-1" style={{ aspectRatio: '1 / 1' }}>
           <div className="grid grid-cols-6 gap-px bg-white/40 w-full h-full">
             {GRID.map((row, rIdx) =>
               row.map((label, cIdx) => (
@@ -66,7 +66,7 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
                   style={{ backgroundColor: cellColor(rIdx, cIdx) }}
                   className="relative flex items-center justify-center group"
                 >
-                  <span className="relative text-[9px] font-bold text-center leading-tight px-0.5 select-none text-nl-black/70 group-hover:text-nl-black group-hover:bg-white group-hover:rounded-sm group-hover:px-1 group-hover:z-[100] transition-colors">
+                  <span className="relative text-[7px] sm:text-[9px] font-bold text-center leading-tight px-0.5 select-none text-nl-black/70 group-hover:text-nl-black group-hover:bg-white group-hover:rounded-sm group-hover:px-1 group-hover:z-[100] transition-colors">
                     {label}
                   </span>
                 </div>
@@ -80,7 +80,7 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
               style={{ left: `${s.mood.x}%`, top: `${s.mood.y}%`, zIndex: 10 + i }}
             >
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-base shadow-md border-2"
+                className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm sm:text-base shadow-md border-2"
                 style={{ backgroundColor: colorOf(s.colorIdx).bg, borderColor: colorOf(s.colorIdx).border }}
               >
                 {s.emoji}
@@ -89,14 +89,15 @@ function MoodBoard({ submissions }: { submissions: Submission[] }) {
           ))}
         </div>
       </div>
-      <div className="flex items-center gap-2 mt-2 pt-3" style={{ paddingLeft: 52 }}>
-        <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Unpleasant</span>
+      {/* X-axis — offset matches Y-axis width */}
+      <div className="flex items-center gap-1 sm:gap-2 mt-2 pt-2 sm:pt-3 pl-10 sm:pl-12">
+        <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Unpleasant</span>
         <div className="flex items-center flex-1 gap-1">
-          <span className="text-lg font-bold text-nl-black/50 leading-none">←</span>
+          <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">←</span>
           <div className="flex-1 h-px bg-nl-black/30" />
-          <span className="text-lg font-bold text-nl-black/50 leading-none">→</span>
+          <span className="text-base sm:text-lg font-bold text-nl-black/50 leading-none">→</span>
         </div>
-        <span className="font-black text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Pleasant</span>
+        <span className="font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-nl-black/60 shrink-0">Pleasant</span>
       </div>
     </div>
   )
@@ -169,9 +170,9 @@ function TeamCanvas({ submissions }: { submissions: Submission[] }) {
   const withDrawings = submissions.filter(s => s.drawing?.length)
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="rounded-xl overflow-hidden border border-nl-black/10" style={{ width: CANVAS_W, height: CANVAS_H }}>
-        <img src={mainDataUrl} style={{ width: CANVAS_W, height: CANVAS_H, display: 'block' }} />
+    <div className="flex flex-col gap-3 w-full">
+      <div className="rounded-xl overflow-hidden border border-nl-black/10 w-full">
+        <img src={mainDataUrl} className="w-full h-auto block" style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }} />
       </div>
       {withDrawings.length > 1 && (
         <div className="flex gap-2 flex-wrap">
@@ -498,31 +499,34 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
   }
 
   return (
-    <div ref={boardRef} className="min-h-screen bg-nl-beige px-10 py-8 flex flex-col gap-8">
+    <div ref={boardRef} className="min-h-screen bg-nl-beige px-4 sm:px-10 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+        {/* Title — below action bar on mobile, left on desktop */}
+        <div className="order-2 sm:order-1">
           <p className="font-normal uppercase text-sm text-nl-purple-dark tracking-widest">{nestName}</p>
-          <h1 className="font-black text-3xl text-nl-black mt-0.5">Nest Checkout — Overview</h1>
+          <h1 className="font-black text-2xl sm:text-3xl text-nl-black mt-0.5">Nest Checkout — Overview</h1>
         </div>
-        <div className="flex gap-3 items-center">
-          <button onClick={onRestart} className="font-semibold text-xs text-nl-black/30 hover:text-nl-black/60 transition-colors cursor-pointer">
-            Restart
+        {/* Action bar — top on mobile, right on desktop */}
+        <div className="order-1 sm:order-2 flex items-center gap-2 sm:gap-3 shrink-0">
+          <button onClick={onRestart} className="font-semibold text-sm text-nl-black/40 hover:text-nl-black/70 transition-colors cursor-pointer mr-auto sm:mr-0">
+            ← Restart
           </button>
           <button
             onClick={copyLink}
-            className="font-semibold text-sm px-4 py-2.5 rounded-xl border border-nl-black/20 text-nl-black/60 hover:text-nl-black hover:border-nl-black/40 transition-colors cursor-pointer"
+            className="flex items-center gap-1 h-9 px-3 sm:px-4 rounded-xl border border-nl-black/15 hover:border-nl-black/30 text-nl-black/50 hover:text-nl-black text-sm font-semibold transition-colors cursor-pointer"
           >
-            {copied ? '✓ Copied!' : '🔗 Share link'}
+            {copied ? '✓' : '🔗'}
+            <span className="hidden sm:inline ml-0.5">{copied ? 'Copied!' : 'Share'}</span>
           </button>
           <div className="relative">
             <button
               onClick={() => setScreenshotMenu(v => !v)}
               disabled={screenshotting}
-              className="font-bold text-sm px-6 py-2.5 rounded-xl bg-nl-black text-nl-white hover:bg-nl-purple-dark transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-1 h-9 px-3 sm:px-5 rounded-xl bg-nl-black text-nl-white hover:bg-nl-purple-dark text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {screenshotting ? 'Capturing...' : '📸 Screenshot'}
+              📸<span className="hidden sm:inline ml-0.5">{screenshotting ? 'Capturing...' : 'Screenshot'}</span>
             </button>
             {screenshotMenu && (
               <>
@@ -553,50 +557,62 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
       </div>
 
       {/* Main */}
-      <div className="flex gap-10 items-start">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
 
-        <div className="shrink-0 flex flex-col gap-12">
+        {/* Left: Mood (always) + Canvas (desktop only) */}
+        <div className="w-full lg:w-[360px] lg:shrink-0 flex flex-col gap-8">
           <div>
             <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Mood Check</h2>
             <MoodBoard submissions={visibleSubmissions} />
           </div>
-          <div>
+          <div className="hidden lg:block">
             <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Team Canvas</h2>
             <TeamCanvas submissions={visibleSubmissions} />
           </div>
         </div>
 
-        <div className="flex gap-6 flex-1 min-w-0">
+        {/* Right: content — 2 paired rows on mobile, single flex row on desktop */}
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-6 flex-1 min-w-0 w-full">
 
-          <Column title="Achievements">
-            {visibleSubmissions.map((s, i) =>
-              s.wins.map((w, j) => (
-                <StickyNote key={`${i}-${j}`} text={w} s={s} />
-              ))
-            )}
-          </Column>
+          {/* Row 1 on mobile: Achievements + Learnings */}
+          <div className="grid grid-cols-2 lg:contents gap-4">
+            <Column title="Achievements">
+              {visibleSubmissions.map((s, i) =>
+                s.wins.map((w, j) => (
+                  <StickyNote key={`${i}-${j}`} text={w} s={s} />
+                ))
+              )}
+            </Column>
+            <Column title="Learnings">
+              {visibleSubmissions.map((s, i) =>
+                s.learnings.map((l, j) => (
+                  <StickyNote key={`${i}-${j}`} text={l} s={s} />
+                ))
+              )}
+            </Column>
+          </div>
 
-          <Column title="Learnings">
-            {visibleSubmissions.map((s, i) =>
-              s.learnings.map((l, j) => (
-                <StickyNote key={`${i}-${j}`} text={l} s={s} />
-              ))
-            )}
-          </Column>
-
-          <Column title="Rather A or B?">
-            {visibleSubmissions.map((s, i) => s.funAnswer && (
-              <AOrBCard key={i} s={s} />
-            ))}
-          </Column>
-
-          <Column title="Weekend Plans">
-            {visibleSubmissions.map((s, i) => s.weekend && (
-              <StickyNote key={i} text={s.weekend} s={s} />
-            ))}
-          </Column>
+          {/* Row 2 on mobile: A or B + Weekend Plans */}
+          <div className="grid grid-cols-2 lg:contents gap-4">
+            <Column title="Rather A or B?">
+              {visibleSubmissions.map((s, i) => s.funAnswer && (
+                <AOrBCard key={i} s={s} />
+              ))}
+            </Column>
+            <Column title="Weekend Plans">
+              {visibleSubmissions.map((s, i) => s.weekend && (
+                <StickyNote key={i} text={s.weekend} s={s} />
+              ))}
+            </Column>
+          </div>
 
         </div>
+      </div>
+
+      {/* Team Canvas — mobile only, after content columns */}
+      <div className="lg:hidden mt-4">
+        <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Team Canvas</h2>
+        <TeamCanvas submissions={visibleSubmissions} />
       </div>
     </div>
   )

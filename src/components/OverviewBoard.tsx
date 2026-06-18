@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { flushSync } from 'react-dom'
 import { toPng } from 'html-to-image'
-import type { Draft, Submission } from '../types'
+import type { Submission } from '../types'
 import { renderStrokes } from './checkout/Drawing'
-import { supabase } from '../lib/supabase'
 import { toSlug } from '../utils/session'
 
 export type { Submission }
@@ -187,180 +186,6 @@ function TeamCanvas({ submissions }: { submissions: Submission[] }) {
   )
 }
 
-// ── Reactions ─────────────────────────────────────────────────────────────────
-
-type ReactionType = 'thumbsup' | 'heart' | 'nest'
-type ReactionsMap = Record<string, string[]> // `${cardKey}__${type}` → reactorId[]
-
-function getReactorId() {
-  let id = localStorage.getItem('nest-reactor-id')
-  if (!id) { id = Math.random().toString(36).slice(2, 12); localStorage.setItem('nest-reactor-id', id) }
-  return id
-}
-
-function useReactions(sessionId: string) {
-  const reactorId = useRef(getReactorId())
-  const [reactions, setReactions] = useState<ReactionsMap>({})
-  const reactionsRef = useRef(reactions)
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
-  reactionsRef.current = reactions
-
-  useEffect(() => {
-    // Remove any existing channel first (handles React Strict Mode double-invoke)
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current)
-      channelRef.current = null
-    }
-
-    const channel = supabase
-      .channel(`reactions-${sessionId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
-        if (payload.new.reactor_id === reactorId.current) return
-        const k = `${payload.new.submission_key}__${payload.new.type}`
-        setReactions(prev => ({ ...prev, [k]: [...(prev[k] ?? []), payload.new.reactor_id] }))
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reactions', filter: `session_id=eq.${sessionId}` }, payload => {
-        if (payload.old.reactor_id === reactorId.current) return
-        const k = `${payload.old.submission_key}__${payload.old.type}`
-        setReactions(prev => ({ ...prev, [k]: (prev[k] ?? []).filter(id => id !== payload.old.reactor_id) }))
-      })
-      .subscribe()
-    channelRef.current = channel
-
-    supabase
-      .from('reactions')
-      .select('submission_key, reactor_id, type')
-      .eq('session_id', sessionId)
-      .then(({ data, error }) => {
-        if (error) { console.error('[reactions] load error:', error); return }
-        if (!data) return
-        const map: ReactionsMap = {}
-        for (const row of data) {
-          const k = `${row.submission_key}__${row.type}`
-          map[k] = [...(map[k] ?? []), row.reactor_id]
-        }
-        setReactions(map)
-      })
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-        channelRef.current = null
-      }
-    }
-  }, [sessionId])
-
-  const toggle = useCallback(async (cardKey: string, type: ReactionType) => {
-    const k = `${cardKey}__${type}`
-    const hasReacted = reactionsRef.current[k]?.includes(reactorId.current) ?? false
-
-    setReactions(prev => ({
-      ...prev,
-      [k]: hasReacted
-        ? (prev[k] ?? []).filter(id => id !== reactorId.current)
-        : [...(prev[k] ?? []), reactorId.current],
-    }))
-
-    if (hasReacted) {
-      const { error } = await supabase.from('reactions').delete()
-        .eq('session_id', sessionId)
-        .eq('submission_key', cardKey)
-        .eq('reactor_id', reactorId.current)
-        .eq('type', type)
-      if (error) console.error('[reactions] delete error:', error)
-    } else {
-      const { error } = await supabase.from('reactions').insert({
-        session_id: sessionId,
-        submission_key: cardKey,
-        reactor_id: reactorId.current,
-        type,
-      })
-      if (error) console.error('[reactions] insert error:', error)
-    }
-  }, [sessionId])
-
-  return { reactions, reactorId: reactorId.current, toggle }
-}
-
-// ── Reactable Card Wrapper ────────────────────────────────────────────────────
-
-function NestEmojiIcon({ emoji, size = 20 }: { emoji: string; size?: number }) {
-  if (emoji.startsWith('/'))
-    return <img src={emoji} style={{ width: size, height: size }} className="object-contain" />
-  return <span style={{ fontSize: size, lineHeight: 1 }}>{emoji}</span>
-}
-
-function ReactableCard({ cardKey, reactions, reactorId, nestEmoji, onToggle, children }: {
-  cardKey: string
-  reactions: ReactionsMap
-  reactorId: string
-  nestEmoji: string
-  onToggle: (cardKey: string, type: ReactionType) => void
-  children: (badges: React.ReactNode) => React.ReactNode
-}) {
-  const [hovering, setHovering] = useState(false)
-
-  const types: { type: ReactionType; emoji: string }[] = [
-    { type: 'thumbsup', emoji: '👍' },
-    { type: 'heart',    emoji: '❤️' },
-    { type: 'nest',     emoji: nestEmoji },
-  ]
-
-  const activeTypes = types.filter(t => (reactions[`${cardKey}__${t.type}`]?.length ?? 0) > 0)
-
-  const badges = activeTypes.length > 0 ? (
-    <div className="flex gap-1 mt-2 flex-wrap">
-      {activeTypes.map(({ type, emoji }) => {
-        const count = reactions[`${cardKey}__${type}`]?.length ?? 0
-        const hasOwn = reactions[`${cardKey}__${type}`]?.includes(reactorId) ?? false
-        return (
-          <button
-            key={type}
-            onClick={e => { e.stopPropagation(); onToggle(cardKey, type) }}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer
-              ${hasOwn
-                ? 'bg-white/60 border-nl-black/25 text-nl-black'
-                : 'bg-white/30 border-nl-black/15 text-nl-black/50 hover:border-nl-black/30'
-              }`}
-          >
-            <NestEmojiIcon emoji={emoji} size={13} />
-            <span>{count}</span>
-          </button>
-        )
-      })}
-    </div>
-  ) : null
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-    >
-      {/* Hover toolbar */}
-      {hovering && (
-        <div className="absolute -top-10 right-0 z-20 flex items-center gap-0.5 bg-white rounded-2xl shadow-lg border border-nl-black/10 px-2 py-1.5">
-          {types.map(({ type, emoji }) => {
-            const hasOwn = reactions[`${cardKey}__${type}`]?.includes(reactorId) ?? false
-            return (
-              <button
-                key={type}
-                onClick={e => { e.stopPropagation(); onToggle(cardKey, type) }}
-                className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all cursor-pointer
-                  ${hasOwn ? 'bg-nl-purple/15 scale-110' : 'hover:bg-nl-black/6 hover:scale-110'}`}
-              >
-                <NestEmojiIcon emoji={emoji} size={18} />
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {children(badges)}
-    </div>
-  )
-}
-
 // ── Cards ─────────────────────────────────────────────────────────────────────
 
 function AOrBCard({ s, footer }: { s: Submission; footer?: React.ReactNode }) {
@@ -451,14 +276,13 @@ interface Props {
   onRestart: () => void
 }
 
-export default function OverviewBoard({ submissions, sessionId, nestName, nestEmoji, onAddPerson: _onAddPerson, onRestart }: Props) {
+export default function OverviewBoard({ submissions, sessionId, nestName, nestEmoji: _nestEmoji, onAddPerson: _onAddPerson, onRestart }: Props) {
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
   const [screenshotMenu, setScreenshotMenu] = useState(false)
   const [visibleSubmissions, setVisibleSubmissions] = useState(submissions)
   const boardRef = useRef<HTMLDivElement>(null)
-  // const { reactions, reactorId, toggle } = useReactions(sessionId)
 
   useEffect(() => { setVisibleSubmissions(submissions) }, [submissions])
 

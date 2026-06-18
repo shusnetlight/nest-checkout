@@ -251,15 +251,15 @@ function App() {
       )}
 
       {page === 'welcome' && !sessionId && (
-        <div className="relative z-10 min-h-screen bg-nl-beige flex flex-col items-center justify-center px-6 sm:px-8 py-12">
+        <div className="relative z-10 min-h-dvh bg-nl-beige flex flex-col items-center justify-center px-6 sm:px-8 py-6 sm:py-12">
           <NestBackground emojis={backgroundEmojis} />
-          <p className="font-normal uppercase text-xl text-nl-purple-dark mb-4">
+          <p className="font-normal uppercase text-xl text-nl-purple-dark mb-3">
             Nest Checkout
           </p>
-          <h1 className="font-black text-4xl sm:text-6xl text-nl-black text-center leading-tight mb-4">
+          <h1 className="font-black text-4xl sm:text-6xl text-nl-black text-center leading-tight mb-3">
             Hey Coach! 👋
           </h1>
-          <p className="font-normal text-base sm:text-lg text-nl-black/70 text-center max-w-lg mb-10 sm:mb-14">
+          <p className="font-normal text-base sm:text-lg text-nl-black/70 text-center max-w-lg mb-6 sm:mb-14">
             Time for the weekly Nest Checkout — pick your Nest below<br className="hidden sm:block" />to kick things off and share the link with your team.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full sm:w-auto max-w-sm sm:max-w-none">

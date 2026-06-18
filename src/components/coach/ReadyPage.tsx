@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Check, Copy, Link } from 'lucide-react'
-import NestBackground from '../NestBackground'
+import NestBackground from '../shared/NestBackground'
+import { toSlug } from '../../utils/session'
 
 interface Props {
   sessionId: string
@@ -12,7 +13,6 @@ interface Props {
 
 export default function ReadyPage({ sessionId, nestName, nestEmoji, onStart, onNavigate }: Props) {
   const [copied, setCopied] = useState(false)
-  const toSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}`
 
   function copyLink() {

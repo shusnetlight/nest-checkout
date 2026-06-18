@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { flushSync } from 'react-dom'
 import { toPng } from 'html-to-image'
-import type { Draft } from '../App'
+import type { Draft, Submission } from '../types'
 import { renderStrokes } from './checkout/Drawing'
 import { supabase } from '../lib/supabase'
+import { toSlug } from '../utils/session'
 
-export interface Submission extends Draft {
-  colorIdx: number
-}
+export type { Submission }
 
 const COLORS = [
   { bg: '#E8E4FF', border: '#6664F1' },
@@ -452,7 +451,6 @@ interface Props {
 }
 
 export default function OverviewBoard({ submissions, sessionId, nestName, nestEmoji, onAddPerson: _onAddPerson, onRestart }: Props) {
-  const toSlug = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)

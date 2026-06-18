@@ -1,74 +1,43 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import WizardModal from './components/checkout/WizardModal'
-import NestBackground from './components/NestBackground'
-import OverviewBoard, { type Submission } from './components/OverviewBoard'
+import NestBackground from './components/shared/NestBackground'
+import OverviewBoard from './components/OverviewBoard'
 import UploadPhotoPage from './components/coach/UploadPhotoPage'
 import ReadyPage from './components/coach/ReadyPage'
-import NowPlaying from './components/NowPlaying'
-import { ALL_SONGS, getSessionSongs } from './lib/songs'
+import NowPlaying from './components/shared/NowPlaying'
+import { ALL_SONGS, getSessionSongs } from './data/songs'
 import { QUESTIONS } from './data/questions'
+import { NESTS } from './data/nests'
 import { supabase } from './lib/supabase'
+import { toSlug } from './utils/session'
+import { useSession } from './hooks/useSession'
+import { useSubmissions } from './hooks/useSubmissions'
+import type { Draft } from './types'
 import type { MoodSelection } from './components/checkout/MoodMeter'
 import type { FunAnswer } from './components/checkout/FunQuestion'
 import type { DrawingStroke } from './components/checkout/Drawing'
-
-export interface Draft {
-  name: string
-  emoji: string
-  mood: MoodSelection | null
-  wins: string[]
-  learnings: string[]
-  funAnswer: FunAnswer | null
-  weekend: string
-  drawing: DrawingStroke[]
-  song_choice?: string
-}
 
 const EMPTY_DRAFT: Draft = {
   name: '', emoji: '', mood: null, wins: [], learnings: [], funAnswer: null, weekend: '', drawing: [],
 }
 
-function generateSessionId() {
-  return Math.random().toString(36).slice(2, 10)
-}
-
-function toSlug(name: string) {
-  return name.toLowerCase().replace(/\s+/g, '-')
-}
-
-const NESTS = [
-  { name: 'Pretzel Gaudi',      emoji: '🥨', tagline: 'Crispy, twisted & always there' },
-  { name: 'Travelling Racoons', emoji: '/racoon.png', tagline: 'Curious minds, always exploring' },
-  { name: 'Diamond Ducks',      emoji: '/diamond-duck.png', tagline: 'Waddling strong, shining bright' },
-]
-
-function fromSlug(slug: string) {
-  return NESTS.find(n => toSlug(n.name) === slug)?.name ?? slug
-}
-
 function App() {
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [nestName, setNestName] = useState<string | null>(null)
+  const { sessionId, nestName, sessionPhotoUrl, setSessionPhotoUrl, page, setPage, createSession, resetSession } = useSession()
+  const { submissions, setSubmissions } = useSubmissions(sessionId)
+
   const [hoveredNest, setHoveredNest] = useState<string | null>(null)
-  const [sessionPhotoUrl, setSessionPhotoUrl] = useState<string | null>(null)
-  const [submissions, setSubmissions] = useState<Submission[]>([])
-  const [page, setPage] = useState<'welcome' | 'upload-photo' | 'ready' | 'overview'>('welcome')
   const [showWizard, setShowWizard] = useState(false)
-  const [wizardStep, setWizardStep] = useState(1)
+  const [wizardStep, setWizardStep] = useState(0)
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
+  const [currentSongId, setCurrentSongId] = useState<string | null>(null)
+  const [launchRockets, setLaunchRockets] = useState<{ id: number; x: number; y: number; dx: number; dy: number; duration: number; delay: number }[]>([])
   const letsStartRef = useRef<HTMLButtonElement>(null)
   const rocketEmojiRef = useRef<HTMLSpanElement>(null)
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
-  const [launchRockets, setLaunchRockets] = useState<{ id: number; x: number; y: number; dx: number; dy: number; duration: number; delay: number }[]>([])
 
   const questionIndex = useMemo(() => Math.floor(Math.random() * QUESTIONS.length), [showWizard]) // eslint-disable-line
-
-  const [currentSongId, setCurrentSongId] = useState<string | null>(null)
-
   const sessionSongs = useMemo(() => sessionId ? getSessionSongs(sessionId) : ALL_SONGS.slice(0, 3), [sessionId])
-
 
   function handleLetsStart() {
     const origin = rocketEmojiRef.current ?? letsStartRef.current
@@ -95,74 +64,6 @@ function App() {
     }, 500)
   }
 
-  const loadAndSubscribe = useCallback((sid: string) => {
-    // Remove any existing channel first (handles React Strict Mode double-invoke)
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current)
-      channelRef.current = null
-    }
-
-    // Create channel synchronously before any async work
-    const channel = supabase
-      .channel(`session-${sid}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'submissions', filter: `session_id=eq.${sid}` },
-        (payload) => {
-          setSubmissions(prev => {
-            const exists = prev.some(s => s.name === payload.new.data.name && s.emoji === payload.new.data.emoji)
-            if (exists) return prev
-            return [...prev, { ...payload.new.data, colorIdx: prev.length }]
-          })
-        }
-      )
-      .subscribe()
-    channelRef.current = channel
-
-    // Load existing data (fire-and-forget)
-    supabase
-      .from('submissions')
-      .select('data')
-      .eq('session_id', sid)
-      .order('created_at', { ascending: true })
-      .then(({ data }) => {
-        if (data) setSubmissions(data.map((row, i) => ({ ...row.data, colorIdx: i })))
-      })
-  }, [])
-
-  // On mount: check URL for session, nest and view
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const sid = params.get('session')
-    const view = params.get('view')
-    const nest = params.get('nest')
-    if (sid) {
-      setSessionId(sid)
-      if (nest) setNestName(fromSlug(nest))
-      loadAndSubscribe(sid)
-      if (view === 'overview') setPage('overview')
-      supabase.from('sessions').select('photo_url').eq('id', sid).single().then(({ data }) => {
-        if (data?.photo_url) setSessionPhotoUrl(data.photo_url)
-      })
-    }
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-        channelRef.current = null
-      }
-    }
-  }, [loadAndSubscribe])
-
-  function createSession(nest: string) {
-    const sid = generateSessionId()
-    supabase.from('sessions').insert({ id: sid })
-    window.history.pushState({}, '', `?nest=${toSlug(nest)}&session=${sid}`)
-    setSessionId(sid)
-    setNestName(nest)
-    loadAndSubscribe(sid)
-    setPage('upload-photo')
-  }
-
   function handleDraftChange(field: 'name' | 'emoji', value: string) {
     setDraft(prev => ({ ...prev, [field]: value }))
   }
@@ -180,6 +81,9 @@ function App() {
   }
   function handleDrawingChange(drawing: DrawingStroke[]) {
     setDraft(prev => ({ ...prev, drawing }))
+  }
+  function handleSongChange(id: string) {
+    setDraft(prev => ({ ...prev, song_choice: id }))
   }
 
   async function handleNext() {
@@ -215,14 +119,18 @@ function App() {
     setShowWizard(true)
   }
 
-  function handleSongChange(id: string) {
-    setDraft(prev => ({ ...prev, song_choice: id }))
-  }
-
   function handleRestart() {
     window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}`)
     setPage('welcome')
   }
+
+  const nestEmoji = NESTS.find(n => n.name === nestName)?.emoji ?? '🥨'
+  const allEmojis = NESTS.map(n => n.emoji)
+  const backgroundEmojis = sessionId
+    ? [nestEmoji]
+    : hoveredNest
+      ? [NESTS.find(n => n.name === hoveredNest)!.emoji]
+      : allEmojis
 
   const wizardModal = showWizard && (
     <WizardModal
@@ -244,14 +152,6 @@ function App() {
     />
   )
 
-  const nestEmoji = NESTS.find(n => n.name === nestName)?.emoji ?? '🥨'
-  const allEmojis = NESTS.map(n => n.emoji)
-  const backgroundEmojis = sessionId
-    ? [nestEmoji]
-    : hoveredNest
-      ? [NESTS.find(n => n.name === hoveredNest)!.emoji]
-      : allEmojis
-
   return (
     <>
       {page === 'upload-photo' && (
@@ -264,7 +164,7 @@ function App() {
             setPage('ready')
           }}
           onNavigate={(step) => {
-            if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
+            if (step === 0) { resetSession(); setPage('welcome') }
           }}
         />
       )}
@@ -276,7 +176,7 @@ function App() {
           nestEmoji={nestEmoji}
           onStart={() => setPage('welcome')}
           onNavigate={(step) => {
-            if (step === 0) { setSessionId(null); setNestName(null); setPage('welcome') }
+            if (step === 0) { resetSession(); setPage('welcome') }
             if (step === 1) setPage('upload-photo')
           }}
         />

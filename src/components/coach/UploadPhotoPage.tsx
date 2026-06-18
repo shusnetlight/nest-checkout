@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Info, ImageUp, Trash2, Check } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import NestBackground from '../NestBackground'
+import NestBackground from '../shared/NestBackground'
 
 interface Props {
   sessionId: string

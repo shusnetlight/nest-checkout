@@ -7,23 +7,12 @@ import FunQuestion, { type FunAnswer } from './FunQuestion'
 import Weekend from './Weekend'
 import WeekRecap from './WeekRecap'
 import Drawing, { type DrawingStroke } from './Drawing'
-import SongPicker from '../SongPicker'
-import type { Song } from '../../lib/songs'
+import SongPicker from '../shared/SongPicker'
+import type { Song } from '../../data/songs'
+import type { Draft } from '../../types'
 
 const STEPS_BASE    = ['Your Identity', 'Mood Check', 'Achievements', 'Fun Question', 'Weekend Plans', "Let's Co-Create"]
 const STEPS_PHOTO   = ['Your Identity', 'Mood Check', 'Week Recap', 'Achievements', 'Fun Question', 'Weekend Plans', "Let's Co-Create"]
-
-interface Draft {
-  name: string
-  emoji: string
-  mood: MoodSelection | null
-  wins: string[]
-  learnings: string[]
-  funAnswer: FunAnswer | null
-  weekend: string
-  drawing: DrawingStroke[]
-  song_choice?: string
-}
 
 interface Props {
   step: number

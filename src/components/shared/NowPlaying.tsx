@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import type { Song } from '../lib/songs'
+import type { Song } from '../../data/songs'
 
 interface Props {
   songs: Song[]

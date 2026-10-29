@@ -25,7 +25,7 @@ const EMPTY_DRAFT: Draft = {
 
 function App() {
   const { sessionId, nestName, sessionPhotoUrl, setSessionPhotoUrl, page, setPage, createSession, resetSession } = useSession()
-  const { submissions, setSubmissions } = useSubmissions(sessionId)
+  const { submissions, refresh: refreshSubmissions } = useSubmissions(sessionId)
 
   const [hoveredNest, setHoveredNest] = useState<string | null>(null)
   const [showWizard, setShowWizard] = useState(false)
@@ -94,13 +94,17 @@ function App() {
     if (wizardStep < totalSteps) {
       setWizardStep(s => s + 1)
     } else {
-      await supabase.from('sessions').upsert({ id: sessionId })
+      // ignoreDuplicates → ON CONFLICT DO NOTHING, so later submitters don't need UPDATE rights on sessions
+      await supabase.from('sessions').upsert({ id: sessionId }, { ignoreDuplicates: true })
       const { error } = await supabase.from('submissions').insert({ session_id: sessionId, data: draft })
-      if (!error) {
-        setSubmissions(prev => [...prev, { ...draft, colorIdx: prev.length }])
-        localStorage.setItem('nest-user-name', draft.name)
-        localStorage.setItem('nest-user-emoji', draft.emoji)
+      if (error) {
+        console.error('Failed to save submission', error)
+        alert('Sorry, your check-in could not be saved. Please try again.')
+        return
       }
+      localStorage.setItem('nest-user-name', draft.name)
+      localStorage.setItem('nest-user-emoji', draft.emoji)
+      await refreshSubmissions()
       setShowWizard(false)
       setDraft(EMPTY_DRAFT)
       window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}&view=overview`)

@@ -27,7 +27,10 @@ export function useSession() {
 
   function createSession(nest: string) {
     const sid = generateSessionId()
-    supabase.from('sessions').insert({ id: sid })
+    // Query builders are lazy — without .then() the insert never runs
+    supabase.from('sessions').insert({ id: sid }).then(({ error }) => {
+      if (error) console.error('Failed to create session', error)
+    })
     window.history.pushState({}, '', `?nest=${toSlug(nest)}&session=${sid}`)
     setSessionId(sid)
     setNestName(nest)

@@ -58,6 +58,19 @@ export const ALL_SONGS: Song[] = [
   { id: 'walking-on-sunshine', title: 'Walking On Sunshine',      artist: 'Katrina & The Waves',                    emoji: '🌻',  ytId: 'iPUmE-tne5U' },
   { id: 'a-punk',           title: 'A-Punk',                      artist: 'Vampire Weekend',                        emoji: '🎸',  ytId: '_XC2mqcMMGQ' },
   { id: 'waves',            title: 'Waves (Robin Schulz Remix)',  artist: 'Mr. Probz',                              emoji: '🌊',  ytId: 'pUjE9H8QlA4' },
+  // Autumn chill
+  { id: 'holocene',         title: 'Holocene',                    artist: 'Bon Iver',                               emoji: '🏔️', ytId: 'TWcyIpul8OE' },
+  { id: 'dont-know-why',    title: "Don't Know Why",              artist: 'Norah Jones',                            emoji: '🍵',  ytId: 'tO4dxvguQDk' },
+  { id: 'come-away-with-me',title: 'Come Away With Me',           artist: 'Norah Jones',                            emoji: '🕯️', ytId: 'lbjZPFBD6JU' },
+  { id: 'riptide',          title: 'Riptide',                     artist: 'Vance Joy',                              emoji: '🪕',  ytId: 'uJ_1HMAGb4k' },
+  { id: 'ho-hey',           title: 'Ho Hey',                      artist: 'The Lumineers',                          emoji: '🪵',  ytId: 'zvCBSSwgtg4' },
+  { id: 'home',             title: 'Home',                        artist: 'Edward Sharpe & The Magnetic Zeros',     emoji: '🏡',  ytId: 'DHEOF_rcND8' },
+  { id: 'bloom',            title: 'Bloom',                       artist: 'The Paper Kites',                        emoji: '🌾',  ytId: '8inJtTG_DuU' },
+  { id: 'white-winter-hymnal', title: 'White Winter Hymnal',      artist: 'Fleet Foxes',                            emoji: '🌲',  ytId: 'DrQRS40OKNE' },
+  { id: 'apocalypse',       title: 'Apocalypse',                  artist: 'Cigarettes After Sex',                   emoji: '🌫️', ytId: 'sElE_BfQ67s' },
+  { id: 'another-love',     title: 'Another Love',                artist: 'Tom Odell',                              emoji: '🍂',  ytId: 'MwpMEbgC7DA' },
+  { id: 'yellow',           title: 'Yellow',                      artist: 'Coldplay',                               emoji: '💛',  ytId: 'yKNxeF4KMsY' },
+  { id: 'let-her-go',       title: 'Let Her Go',                  artist: 'Passenger',                              emoji: '🌧️', ytId: 'RBumgq5yVrA' },
 ]
 
 

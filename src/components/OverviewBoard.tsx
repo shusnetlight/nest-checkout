@@ -4,6 +4,7 @@ import { toPng } from 'html-to-image'
 import type { Submission } from '../types'
 import { renderStrokes } from './checkout/Drawing'
 import { toSlug } from '../utils/session'
+import FeedbackModal from './FeedbackModal'
 
 export type { Submission }
 
@@ -281,6 +282,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
   const [copied, setCopied] = useState(false)
   const [screenshotting, setScreenshotting] = useState(false)
   const [screenshotMenu, setScreenshotMenu] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
   const [visibleSubmissions, setVisibleSubmissions] = useState(submissions)
   const boardRef = useRef<HTMLDivElement>(null)
 
@@ -344,6 +346,14 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
             {copied ? '✓' : '🔗'}
             <span className="hidden sm:inline ml-0.5">{copied ? 'Copied!' : 'Share'}</span>
           </button>
+          {!screenshotting && (
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="flex items-center gap-1 h-9 px-3 sm:px-4 rounded-xl border border-nl-black/15 hover:border-nl-black/30 text-nl-black/50 hover:text-nl-black text-sm font-semibold transition-colors cursor-pointer"
+            >
+              💬<span className="hidden sm:inline ml-0.5">Feedback</span>
+            </button>
+          )}
           <div className="relative">
             <button
               onClick={() => setScreenshotMenu(v => !v)}
@@ -438,6 +448,10 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
         <h2 className="font-black text-xs uppercase tracking-widest text-nl-black/40 border-b border-nl-black/10 pb-2 mb-4">Team Canvas</h2>
         <TeamCanvas submissions={visibleSubmissions} />
       </div>
+
+      {showFeedback && (
+        <FeedbackModal nestName={nestName} sessionId={sessionId} onClose={() => setShowFeedback(false)} />
+      )}
     </div>
   )
 }

@@ -30,6 +30,7 @@ function App() {
 
   const [hoveredNest, setHoveredNest] = useState<string | null>(null)
   const [showWizard, setShowWizard] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
   const [wizardStep, setWizardStep] = useState(0)
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
   const [currentSongId, setCurrentSongId] = useState<string | null>(null)
@@ -220,12 +221,16 @@ function App() {
           >
             Let's Start <span ref={rocketEmojiRef}>🚀</span>
           </button>
-          <div className="flex gap-3 mt-25">
+          <div className="flex gap-3 mt-16">
             <button
-              onClick={() => { navigator.clipboard.writeText(window.location.href) }}
-              className="relative z-10 text-xs font-semibold text-nl-black/30 hover:text-nl-black/60 border border-nl-black/15 hover:border-nl-black/30 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href)
+                setLinkCopied(true)
+                setTimeout(() => setLinkCopied(false), 2000)
+              }}
+              className={`relative z-10 text-xs font-semibold border px-4 py-2 rounded-lg transition-colors cursor-pointer ${linkCopied ? 'text-nl-purple-dark border-nl-purple' : 'text-nl-black/30 hover:text-nl-black/60 border-nl-black/15 hover:border-nl-black/30'}`}
             >
-              🔗 Share link
+              {linkCopied ? '✓ Link copied!' : '🔗 Share link'}
             </button>
             <button
               onClick={() => { window.history.pushState({}, '', `?nest=${toSlug(nestName ?? '')}&session=${sessionId}&view=overview`); setPage('overview') }}

@@ -266,14 +266,14 @@ function App() {
           <p className="font-normal text-base sm:text-lg text-nl-black/70 text-center max-w-lg mb-6 sm:mb-14">
             Time for the weekly Nest Checkout — pick your Nest below<br className="hidden sm:block" />to kick things off and share the link with your team.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full sm:w-auto max-w-sm sm:max-w-none">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5 w-full sm:w-auto max-w-sm sm:max-w-none">
             {NESTS.map(nest => (
               <motion.button
                 key={nest.name}
                 onClick={() => createSession(nest.name)}
                 onMouseEnter={() => setHoveredNest(nest.name)}
                 onMouseLeave={() => setHoveredNest(null)}
-                className="group relative flex flex-row sm:flex-col items-center gap-4 sm:gap-3 sm:w-52 px-5 sm:px-6 py-4 sm:pt-8 sm:pb-6 rounded-2xl sm:rounded-3xl border-2 border-nl-black/10 bg-nl-white hover:border-nl-purple hover:shadow-lg cursor-pointer transition-colors duration-200 text-left"
+                className="group relative flex flex-row sm:flex-col items-center gap-4 sm:gap-3 sm:w-52 px-5 sm:px-6 py-4 sm:pt-8 sm:pb-6 rounded-2xl sm:rounded-3xl border-2 border-nl-black/10 bg-nl-white hover:border-nl-purple hover:shadow-lg sm:hover:-mb-9 cursor-pointer transition-[color,background-color,border-color,box-shadow,margin] duration-300 text-left"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.99 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -285,7 +285,7 @@ function App() {
                 }
                 <div className="flex flex-col gap-0.5 sm:items-center flex-1 sm:flex-none">
                   <span className="font-black text-base text-nl-black sm:text-center">{nest.name}</span>
-                  <span className="text-xs text-nl-black/40 sm:hidden">{nest.tagline}</span>
+                  <span className="text-xs text-nl-black/40 sm:text-center sm:h-0 sm:opacity-0 sm:overflow-hidden sm:group-hover:h-8 sm:group-hover:opacity-100 sm:group-hover:mt-1 transition-all duration-300">{nest.tagline}</span>
                 </div>
                 <div className="text-xs font-bold uppercase tracking-widest transition-colors text-nl-black/20 group-hover:text-nl-purple hidden sm:block">
                   Create session →

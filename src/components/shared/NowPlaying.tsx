@@ -50,7 +50,7 @@ export default function NowPlaying({ songs, initialSongId }: Props) {
   function next() { setIndex(i => (i + 1) % songs.length) }
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100]">
+    <div className="fixed bottom-14 sm:bottom-10 left-1/2 -translate-x-1/2 z-[100]">
       <iframe
         key={song.id}
         ref={iframeRef}

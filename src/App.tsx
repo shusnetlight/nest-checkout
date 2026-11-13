@@ -7,6 +7,7 @@ import OverviewBoard from './components/OverviewBoard'
 import UploadPhotoPage from './components/coach/UploadPhotoPage'
 import ReadyPage from './components/coach/ReadyPage'
 import NowPlaying from './components/shared/NowPlaying'
+import MadeBy from './components/shared/MadeBy'
 import { ALL_SONGS, getSessionSongs } from './data/songs'
 import { QUESTIONS } from './data/questions'
 import { NESTS } from './data/nests'
@@ -285,7 +286,7 @@ function App() {
                 }
                 <div className="flex flex-col gap-0.5 sm:items-center flex-1 sm:flex-none">
                   <span className="font-black text-base text-nl-black sm:text-center">{nest.name}</span>
-                  <span className="text-xs text-nl-black/40 sm:text-center sm:h-0 sm:opacity-0 sm:overflow-hidden sm:group-hover:h-8 sm:group-hover:opacity-100 sm:group-hover:mt-1 transition-all duration-300">{nest.tagline}</span>
+                  <span className="text-xs text-nl-black/40 whitespace-pre-line sm:text-center sm:h-0 sm:opacity-0 sm:overflow-hidden sm:group-hover:h-8 sm:group-hover:opacity-100 sm:group-hover:mt-1 transition-all duration-300">{nest.tagline}</span>
                 </div>
                 <div className="text-xs font-bold uppercase tracking-widest transition-colors text-nl-black/20 group-hover:text-nl-purple hidden sm:block">
                   Create session →
@@ -300,6 +301,7 @@ function App() {
         </div>
       )}
 
+      <MadeBy />
       {currentSongId && <NowPlaying songs={sessionSongs} initialSongId={currentSongId} />}
     </>
   )

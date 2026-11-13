@@ -277,6 +277,34 @@ interface Props {
   onRestart: () => void
 }
 
+function triggerDownload(href: string, filename: string) {
+  const link = document.createElement('a')
+  link.download = filename
+  link.href = href
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+function toMarkdown(subs: Submission[], nestName: string) {
+  const date = new Date().toISOString().slice(0, 10)
+  const lines = [`# Nest Checkout — ${nestName}`, '', `_${date}_`, '']
+  for (const s of subs) {
+    lines.push(`## ${s.emoji} ${s.name}`, '')
+    if (s.mood) lines.push(`**Mood:** ${s.mood.label}`, '')
+    const wins = s.wins.filter(w => w.trim())
+    if (wins.length) lines.push('**Wins**', ...wins.map(w => `- ${w}`), '')
+    const learnings = s.learnings.filter(l => l.trim())
+    if (learnings.length) lines.push('**Learnings**', ...learnings.map(l => `- ${l}`), '')
+    if (s.funAnswer) {
+      const { a, b, answer } = s.funAnswer
+      lines.push(`**Fun question:** ${a} or ${b}? → ${answer === 'a' ? a : b}`, '')
+    }
+    if (s.weekend.trim()) lines.push(`**Weekend:** ${s.weekend}`, '')
+  }
+  return lines.join('\n')
+}
+
 export default function OverviewBoard({ submissions, sessionId, nestName, nestEmoji: _nestEmoji, onAddPerson: _onAddPerson, onRestart }: Props) {
   const shareUrl = `${window.location.origin}?nest=${toSlug(nestName)}&session=${sessionId}&view=overview`
   const [copied, setCopied] = useState(false)
@@ -294,17 +322,26 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
     setTimeout(() => setCopied(false), 2000)
   }
 
+  function filterSubmissions(filter: 'all' | 'personal') {
+    if (filter === 'all') return submissions
+    const name = localStorage.getItem('nest-user-name')
+    const emoji = localStorage.getItem('nest-user-emoji')
+    return name && emoji ? submissions.filter(s => s.name === name && s.emoji === emoji) : submissions
+  }
+
+  function downloadMarkdown(filter: 'all' | 'personal') {
+    setScreenshotMenu(false)
+    const md = toMarkdown(filterSubmissions(filter), nestName)
+    const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }))
+    triggerDownload(url, `nest-checkout-${new Date().toISOString().slice(0, 10)}.md`)
+    URL.revokeObjectURL(url)
+  }
+
   async function takeScreenshot(filter: 'all' | 'personal') {
     if (!boardRef.current) return
     setScreenshotMenu(false)
 
-    const subs = filter === 'personal'
-      ? (() => {
-          const name = localStorage.getItem('nest-user-name')
-          const emoji = localStorage.getItem('nest-user-emoji')
-          return name && emoji ? submissions.filter(s => s.name === name && s.emoji === emoji) : submissions
-        })()
-      : submissions
+    const subs = filterSubmissions(filter)
 
     flushSync(() => { setVisibleSubmissions(subs); setScreenshotting(true) })
 
@@ -313,12 +350,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
 
     try {
       const dataUrl = await toPng(boardRef.current, { pixelRatio: 2, backgroundColor: '#FFF0E6' })
-      const link = document.createElement('a')
-      link.download = `nest-checkout-${sessionId}.png`
-      link.href = dataUrl
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      triggerDownload(dataUrl, `nest-checkout-${sessionId}.png`)
     } finally {
       flushSync(() => { setVisibleSubmissions(submissions); setScreenshotting(false) })
     }
@@ -351,7 +383,7 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
               onClick={() => setShowFeedback(true)}
               className="flex items-center gap-1 h-9 px-3 sm:px-4 rounded-xl border border-nl-black/15 hover:border-nl-black/30 text-nl-black/50 hover:text-nl-black text-sm font-semibold transition-colors cursor-pointer"
             >
-              💬<span className="hidden sm:inline ml-0.5">Feedback</span>
+              💬<span className="hidden sm:inline ml-0.5">Give Feedback</span>
             </button>
           )}
           <div className="relative">
@@ -360,24 +392,24 @@ export default function OverviewBoard({ submissions, sessionId, nestName, nestEm
               disabled={screenshotting}
               className="flex items-center gap-1 h-9 px-3 sm:px-5 rounded-xl bg-nl-black text-nl-white hover:bg-nl-purple-dark text-sm font-bold transition-colors disabled:opacity-50 cursor-pointer"
             >
-              📸<span className="hidden sm:inline ml-0.5">{screenshotting ? 'Capturing...' : 'Screenshot'}</span>
+              📸<span className="hidden sm:inline ml-0.5">{screenshotting ? 'Capturing...' : 'Save for Reflection'}</span>
             </button>
             {screenshotMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setScreenshotMenu(false)} />
-                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-lg border border-nl-black/10 overflow-hidden z-50 min-w-[160px]">
-                  <button
-                    onClick={() => takeScreenshot('all')}
-                    className="w-full text-left px-4 py-2.5 text-sm font-semibold text-nl-black hover:bg-nl-black/5 transition-colors cursor-pointer"
-                  >
-                    All entries
-                  </button>
-                  <button
-                    onClick={() => takeScreenshot('personal')}
-                    className="w-full text-left px-4 py-2.5 text-sm font-semibold text-nl-black hover:bg-nl-black/5 transition-colors cursor-pointer"
-                  >
-                    My entries
-                  </button>
+                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-lg border border-nl-black/10 overflow-hidden z-50 w-72">
+                  <div className="px-4 pt-3 pb-2.5 text-xs leading-relaxed text-nl-black/60 border-b border-nl-black/10">
+                    <p className="text-sm font-semibold text-nl-black mb-1">Never lose a win again ✨</p>
+                    <p>Regular reflection helps you see how far you've come. Save your entries each week, so nothing gets forgotten.</p>
+                    <p className="mt-1.5 text-nl-black/40">PNG for visual snapshot · <span className="whitespace-nowrap">MD for your AI tools</span></p>
+                  </div>
+                  {([['all', 'All entries'], ['personal', 'My entries']] as const).map(([filter, label]) => (
+                    <div key={filter} className="flex items-center gap-2 px-4 py-2.5 border-b border-nl-black/10 last:border-b-0">
+                      <span className="text-sm font-semibold text-nl-black mr-auto">{label}</span>
+                      <button onClick={() => takeScreenshot(filter)} className="h-7 px-2.5 rounded-lg border border-nl-black/15 hover:border-nl-black/30 text-nl-black/50 hover:text-nl-black text-xs font-medium transition-colors cursor-pointer">📸 PNG</button>
+                      <button onClick={() => downloadMarkdown(filter)} className="h-7 px-2.5 rounded-lg border border-nl-black/15 hover:border-nl-black/30 text-nl-black/50 hover:text-nl-black text-xs font-medium transition-colors cursor-pointer">📝 MD</button>
+                    </div>
+                  ))}
                 </div>
               </>
             )}
